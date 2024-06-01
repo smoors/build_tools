@@ -1,6 +1,8 @@
 name: Test Build Tools
 
 on: [push, pull_request]
+env:
+  LMOD_VERSION: 8.7.32
 
 jobs:
   TestBuildTools:
@@ -22,9 +24,9 @@ jobs:
 
       - name: Download and install Lmod
         run: |
-          wget https://github.com/TACC/Lmod/archive/refs/tags/8.7.19.tar.gz
-          tar -xf 8.7.32.tar.gz
-          cd Lmod-8.7.32
+          wget https://github.com/TACC/Lmod/archive/refs/tags/${{ env.LMOD_VERSION }}.tar.gz
+          tar -xf ${{ env.LMOD_VERSION }}.tar.gz
+          cd Lmod-${{ env.LMOD_VERSION }}
           ./configure --prefix=/opt/apps
           make install
           cd $GITHUB_WORKSPACE
