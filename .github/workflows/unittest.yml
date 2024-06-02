@@ -57,5 +57,8 @@ jobs:
         run: |
           source /opt/apps/lmod/lmod/init/profile
           pytest
+          export VSC_ARCH_LOCAL=skylake
+          export VSC_ARCH_SUFFIX=-ib
+          export VSC_OS_LOCAL=RL8
           submit_build.py --help
 
