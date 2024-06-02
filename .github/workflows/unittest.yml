@@ -57,4 +57,5 @@ jobs:
         run: |
           source /opt/apps/lmod/lmod/init/profile
           pytest
+          submit_build.py --help
 
