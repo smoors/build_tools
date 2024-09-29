@@ -79,7 +79,6 @@ def main():
         'sourcepath': '/apps/brussel/sources:/apps/gent/source',
         'installpath': os.path.join(APPS_BRUSSEL, os.getenv('VSC_OS_LOCAL'), LOCAL_ARCH),
         'buildpath': os.path.join(job['tmp'], 'eb-submit-build-fetch'),
-        'subdir-modules': 'modules',
         'hooks': hooks_hydra.__file__,
     }
 
