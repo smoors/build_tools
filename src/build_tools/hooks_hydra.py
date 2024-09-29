@@ -132,19 +132,17 @@ def set_modules_subdir(self):
     # in hydra we change it to 'modules/<subdir>'
     subdir_modules = os.path.split(ConfigurationVariables()['subdir_modules'])
 
-    if len(subdir_modules) not in [1, 2] or subdir_modules[0] != 'modules':
+    if len(subdir_modules) != 2:
         log_msg = 'Wrong subdir_modules format %s. Should be modules/<subdir>'
         raise EasyBuildError(log_msg, os.path.join(*subdir_modules))
 
-    subdir = None
-    if len(subdir_modules) == 2:
-        subdir = subdir_modules[1]
+    subdir = subdir_modules[1]
 
-    if subdir and subdir not in VALID_MODULES_SUBDIRS:
+    if subdir != 'modules' and subdir not in VALID_MODULES_SUBDIRS:
         log_msg = "Specified modules subdir %s is not valid. Choose one of %s."
         raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
 
-    if not subdir:
+    if subdir == 'modules':
         subdir, log_msg = calc_tc_gen(
             self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
         if not subdir:
