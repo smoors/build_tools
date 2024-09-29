@@ -125,29 +125,38 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
     return False, log_msg
 
 
-def set_subdir_modules(self):
+def set_modules_subdir(self):
     " set modules subdir if not yet specified "
 
-    subdir_modules = ConfigurationVariables()['subdir_modules']
+    # default subdir_modules config var = 'modules'
+    # in hydra we change it to 'modules/<subdir>'
+    subdir_modules = os.path.split(ConfigurationVariables()['subdir_modules'])
+    if len(subdir_modules) not in [1, 2]:
+        log_msg = 'Wrong subdir_modules format %s. Should be modules/<subdir>'
+        raise EasyBuildError(log_msg, os.path.join(*subdir_modules))
 
-    if subdir_modules:
-        if subdir_modules not in VALID_MODULES_SUBDIRS:
+    subdir = None
+    if len(subdir_modules) == 2:
+        subdir = subdir_modules[1]
+
+    if subdir:
+        if subdir not in VALID_MODULES_SUBDIRS:
             log_msg = "Specified modules subdir %s is not valid. Choose one of %s."
-            raise EasyBuildError(log_msg, subdir_modules, VALID_MODULES_SUBDIRS)
+            raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
 
-        self.log.info("Using specified modules subdir %s", subdir_modules)
+        self.log.info("Using specified modules subdir %s", subdir)
 
     else:
-        subdir_modules, log_msg = calc_tc_gen(
+        subdir, log_msg = calc_tc_gen(
             self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
-        if not subdir_modules:
+        if not subdir:
             raise EasyBuildError(log_msg)
 
         self.log.info(log_msg)
 
-    # append subdir_modules to last occurrence of 'modules' in the path string
-    self.mod_filepath = f'/modules/{subdir_modules}/'.join(self.mod_filepath.rsplit('/modules/'))
-    self.installdir_mod = f'/modules/{subdir_modules}/'.join(self.installdir_mod.rsplit('/modules/'))
+    # append subdir to (last occurrence of) '/modules/' in the path string
+    self.mod_filepath = f'/modules/{subdir}/'.join(self.mod_filepath.rsplit('/modules/'))
+    self.installdir_mod = f'/modules/{subdir}/'.join(self.installdir_mod.rsplit('/modules/'))
 
 
 def acquire_fetch_lock(self):
@@ -280,7 +289,7 @@ def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
 
 def pre_fetch_hook(self):
     """Hook at pre-fetch level"""
-    set_subdir_modules(self)
+    set_modules_subdir(self)
     acquire_fetch_lock(self)
 
 
