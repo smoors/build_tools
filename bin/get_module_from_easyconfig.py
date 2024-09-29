@@ -24,7 +24,7 @@ import sys
 
 easyconfig = sys.argv[1]
 
-set_up_configuration()
+set_up_configuration(silent=True)
 
 easyconfigs, generated_ecs = parse_easyconfigs([(easyconfig, False)])
 print(easyconfigs[0]['full_mod_name'])  # the output contains logging stuff from EB as well

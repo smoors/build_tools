@@ -25,10 +25,10 @@ from flufl.lock import Lock, TimeOutError, NotLockedError
 from vsc.utils import fancylogger
 
 from easybuild.framework.easyconfig.constants import EASYCONFIG_CONSTANTS
-from easybuild.framework.easyconfig.easyconfig import letter_dir_for
+from easybuild.framework.easyconfig.easyconfig import letter_dir_for, get_toolchain_hierarchy
 from easybuild.tools import LooseVersion
 from easybuild.tools.build_log import EasyBuildError
-from easybuild.tools.config import source_paths
+from easybuild.tools.config import source_paths, ConfigurationVariables
 from easybuild.tools.filetools import mkdir
 from easybuild.tools.hooks import SANITYCHECK_STEP
 
@@ -63,6 +63,91 @@ GPU_ARCHS = [x for (x, y) in ARCHS.items() if y['partition']['gpu']]
 LOCAL_ARCH = os.getenv('VSC_ARCH_LOCAL')
 LOCAL_ARCH_SUFFIX = os.getenv('VSC_ARCH_SUFFIX')
 LOCAL_ARCH_FULL = f'{LOCAL_ARCH}{LOCAL_ARCH_SUFFIX}'
+
+VALID_TCGENS = ['2022a', '2023a']
+VALID_MODULES_SUBDIRS = VALID_TCGENS + ['system']
+VALID_TCS = ['foss', 'intel', 'gomkl', 'gimkl', 'gimpi']
+
+
+def get_tc_versions():
+    " build dict of (sub)toolchain-versions per valid generation "
+    tc_versions = {}
+    for toolcgen in VALID_TCGENS:
+        tc_versions[toolcgen] = []
+        for toolc in VALID_TCS:
+            try:
+                tc_versions[toolcgen].extend(get_toolchain_hierarchy({'name': toolc, 'version': toolcgen}))
+            except EasyBuildError:
+                # skip if no easyconfig found for toolchain-version
+                pass
+
+    return tc_versions
+
+
+def calc_tc_gen(name, version, tcname, tcversion, easyblock):
+    """
+    calculate the toolchain generation
+    return False if not valid
+    """
+    name_version = {'name': name, 'version': version}
+    toolchain = {'name': tcname, 'version': tcversion}
+    software = [name, version, tcname, tcversion, easyblock]
+
+    tc_versions = get_tc_versions()
+
+    # (software with) valid (sub)toolchain and version
+    for toolcgen in VALID_TCGENS:
+        if toolchain in tc_versions[toolcgen] or name_version in tc_versions[toolcgen]:
+            log_msg = f"Determined toolchain generation {toolcgen} for {software}"
+            return toolcgen, log_msg
+
+    # (software with) valid (sub)toolchain but invalid version
+    for toolcgen in VALID_TCGENS:
+        tcnames = [x['name'] for x in tc_versions[toolcgen]]
+        if toolchain['name'] in tcnames or name in tcnames:
+            log_msg = (f"Determined toolchain generation {toolcgen} for {software} is not valid."
+                       f" Choose one of {VALID_TCGENS}.")
+            return False, log_msg
+
+    # invalid toolchains
+    # all toolchains have 'system' toolchain, so we need to handle the invalid toolchains separately
+    # all toolchains have 'Toolchain' easyblock, so checking the easyblock is sufficient
+    if easyblock == 'Toolchain':
+        log_msg = f"Invalid toolchain {name} for {software}"
+        return False, log_msg
+
+    # software with 'system' toolchain: return 'system'
+    if tcname == 'system':
+        log_msg = f"Determined toolchain {tcname} for {software}"
+        return tcname, log_msg
+
+    log_msg = f"Invalid toolchain {tcname} for {software}"
+    return False, log_msg
+
+
+def set_subdir_modules(self):
+    " set modules subdir if not yet specified "
+
+    subdir_modules = ConfigurationVariables()['subdir_modules']
+
+    if subdir_modules:
+        if subdir_modules not in VALID_MODULES_SUBDIRS:
+            log_msg = "Specified modules subdir %s is not valid. Choose one of %s."
+            raise EasyBuildError(log_msg, subdir_modules, VALID_MODULES_SUBDIRS)
+
+        self.log.info("Using specified modules subdir %s", subdir_modules)
+
+    else:
+        subdir_modules, log_msg = calc_tc_gen(
+            self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
+        if not subdir_modules:
+            raise EasyBuildError(log_msg)
+
+        self.log.info(log_msg)
+
+    # append subdir_modules to last occurrence of 'modules' in the path string
+    self.mod_filepath = f'/modules/{subdir_modules}/'.join(self.mod_filepath.rsplit('/modules/'))
+    self.installdir_mod = f'/modules/{subdir_modules}/'.join(self.installdir_mod.rsplit('/modules/'))
 
 
 def acquire_fetch_lock(self):
@@ -195,6 +280,7 @@ def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
 
 def pre_fetch_hook(self):
     """Hook at pre-fetch level"""
+    set_subdir_modules(self)
     acquire_fetch_lock(self)
 
 
