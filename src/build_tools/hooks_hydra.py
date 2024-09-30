@@ -18,6 +18,7 @@ Custom EasyBuild hooks for VUB-HPC Clusters
 """
 
 import os
+from pathlib import Path
 import time
 
 from flufl.lock import Lock, TimeOutError, NotLockedError
@@ -125,35 +126,39 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
     return False, log_msg
 
 
-def set_modules_subdir(self):
-    " set modules subdir if not yet specified "
+def update_module_install_paths(self):
+    " update module install paths unless subdir-modules uption is specified "
 
     # default subdir_modules config var = 'modules'
     # in hydra we change it to 'modules/<subdir>'
-    subdir_modules = os.path.split(ConfigurationVariables()['subdir_modules'])
+    subdir_modules = Path(ConfigurationVariables()['subdir_modules']).parts
 
-    if len(subdir_modules) != 2:
-        log_msg = 'Wrong subdir_modules format %s. Should be modules/<subdir>'
+    if len(subdir_modules) not in [1, 2] or subdir_modules[0] != 'modules':
+        log_msg = 'Invalid subdir-modules format %s, should be "modules/<subdir>"'
         raise EasyBuildError(log_msg, os.path.join(*subdir_modules))
 
-    subdir = subdir_modules[1]
+    if len(subdir_modules) == 2:
+        subdir = subdir_modules[1]
+        if subdir not in VALID_MODULES_SUBDIRS:
+            log_msg = "Specified modules subdir %s is not valid. Choose one of %s."
+            raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
+        self.log.info("Option subdir-modules was set to %s, not updating module install paths.", subdir_modules)
+        return
 
-    if subdir != 'modules' and subdir not in VALID_MODULES_SUBDIRS:
-        log_msg = "Specified modules subdir %s is not valid. Choose one of %s."
-        raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
+    subdir, log_msg = calc_tc_gen(
+        self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
+    if not subdir:
+        raise EasyBuildError(log_msg)
+    self.log.info(log_msg)
 
-    if subdir == 'modules':
-        subdir, log_msg = calc_tc_gen(
-            self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
-        if not subdir:
-            raise EasyBuildError(log_msg)
-        self.log.info(log_msg)
-    else:
-        self.log.info("Using specified modules subdir %s", subdir)
+    # insert subdir in module install path strings (normally between 'modules' and 'all')
+    installdir_mod = Path(self.installdir_mod).parts
+    self.installdir_mod = Path().joinpath(*installdir_mod[:-1], subdir, installdir_mod[-1]).as_posix()
+    self.log.info('Updated installdir_mod to %s', self.installdir_mod)
 
-    # append subdir to (last occurrence of) '/modules/' in the path string
-    self.mod_filepath = f'/modules/{subdir}/'.join(self.mod_filepath.rsplit('/modules/'))
-    self.installdir_mod = f'/modules/{subdir}/'.join(self.installdir_mod.rsplit('/modules/'))
+    mod_filepath = Path(self.mod_filepath).parts
+    self.mod_filepath = Path().joinpath(*mod_filepath[:-3], subdir, *mod_filepath[-3:]).as_posix()
+    self.log.info('Updated mod_filepath to %s', self.mod_filepath)
 
 
 def acquire_fetch_lock(self):
@@ -286,7 +291,7 @@ def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
 
 def pre_fetch_hook(self):
     """Hook at pre-fetch level"""
-    set_modules_subdir(self)
+    update_module_install_paths(self)
     acquire_fetch_lock(self)
 
 
