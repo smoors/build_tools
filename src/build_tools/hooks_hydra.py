@@ -134,7 +134,7 @@ def update_module_install_paths(self):
     subdir_modules = Path(ConfigurationVariables()['subdir_modules']).parts
 
     if len(subdir_modules) not in [1, 2] or subdir_modules[0] != 'modules':
-        log_msg = '[pre-fetch hook] Invalid subdir-modules format %s, should be "modules/<subdir>."'
+        log_msg = '[pre-fetch hook] Format of option subdir-modules %s is not valid. Must be modules/<subdir>.'
         raise EasyBuildError(log_msg, os.path.join(*subdir_modules))
 
     if len(subdir_modules) == 2:
