@@ -134,31 +134,32 @@ def update_module_install_paths(self):
     subdir_modules = Path(ConfigurationVariables()['subdir_modules']).parts
 
     if len(subdir_modules) not in [1, 2] or subdir_modules[0] != 'modules':
-        log_msg = 'Invalid subdir-modules format %s, should be "modules/<subdir>"'
+        log_msg = '[pre-fetch hook] Invalid subdir-modules format %s, should be "modules/<subdir>."'
         raise EasyBuildError(log_msg, os.path.join(*subdir_modules))
 
     if len(subdir_modules) == 2:
         subdir = subdir_modules[1]
         if subdir not in VALID_MODULES_SUBDIRS:
-            log_msg = "Specified modules subdir %s is not valid. Choose one of %s."
+            log_msg = "[pre-fetch hook] Specified modules subdir %s is not valid. Choose one of %s."
             raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
-        self.log.info("Option subdir-modules was set to %s, not updating module install paths.", subdir_modules)
+        log_msg = "[pre-fetch hook] Option subdir-modules was set to %s, not updating module install paths."
+        self.log.info(log_msg, subdir_modules)
         return
 
     subdir, log_msg = calc_tc_gen(
         self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
     if not subdir:
-        raise EasyBuildError(log_msg)
-    self.log.info(log_msg)
+        raise EasyBuildError("[pre-fetch hook] " + log_msg)
+    self.log.info("[pre-fetch hook] " + log_msg)
 
     # insert subdir in module install path strings (normally between 'modules' and 'all')
     installdir_mod = Path(self.installdir_mod).parts
     self.installdir_mod = Path().joinpath(*installdir_mod[:-1], subdir, installdir_mod[-1]).as_posix()
-    self.log.info('Updated installdir_mod to %s', self.installdir_mod)
+    self.log.info('[pre-fetch hook] Updated installdir_mod to %s.', self.installdir_mod)
 
     mod_filepath = Path(self.mod_filepath).parts
     self.mod_filepath = Path().joinpath(*mod_filepath[:-3], subdir, *mod_filepath[-3:]).as_posix()
-    self.log.info('Updated mod_filepath to %s', self.mod_filepath)
+    self.log.info('[pre-fetch hook] Updated mod_filepath to %s.', self.mod_filepath)
 
 
 def acquire_fetch_lock(self):
