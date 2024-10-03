@@ -56,11 +56,11 @@ def bwrap_prefix(job_options, modname, arch):
     # we don’t know the final location yet, and it’s not needed for modules
     # binding is only needed for the software itself
     return ' '.join([
-        f'mkdir -p {soft_source} &&',
-        f'mkdir -p {mod_source} &&',
+        f'mkdir -p "{soft_source}" &&',
+        f'mkdir -p "{mod_source}" &&',
         'bwrap',
         '--bind / /',
-        f'--bind {soft_source} {soft_dest}',
+        f'--bind "{soft_source}" "{soft_dest}"',
         '--dev /dev',
         '--bind /dev/log /dev/log',
     ])
@@ -90,13 +90,13 @@ def rsync_copy(job_options, modname, modversion, arch):
 
     rsync_software = ' '.join([
         'rsync -a',
-        f'--link-dest={source_soft_path}',
+        f'--link-dest="{source_soft_path}"',
         source_soft_path,
         dest_soft_path,
     ])
     rsync_module = ' '.join([
         'rsync -a',
-        f'--link-dest={source_mod_path}',
+        f'--link-dest="{source_mod_path}"',
         source_mod_file,
     ])
     return '\n'.join([
@@ -106,7 +106,7 @@ def rsync_copy(job_options, modname, modversion, arch):
         f'echo "source module file: {source_mod_file}"',
         'echo "destination module file: $dest_mod_file"',
         f'test -d "{source_soft_path}" || {{ echo "ERROR: bwrap install dir does not exist"; exit 1; }}',
-        f'test $(ls -A "{source_soft_path}") || {{ echo "ERROR: bwrap install dir is empty"; exit 1; }}',
+        f'test -n "$(ls -A {source_soft_path})" || {{ echo "ERROR: bwrap install dir is empty"; exit 1; }}',
         f'test -s "{source_mod_file}" || {{ echo "ERROR: source module file does not exist or is empty"; exit 1; }}',
         f'# {rsync_software} || {{ echo "ERROR: failed to copy bwrap install dir"; exit 1; }}',
         f'# {rsync_module} "$dest_mod_file" || {{ echo "ERROR: failed to copy bwrap module file"; exit 1; }}',
