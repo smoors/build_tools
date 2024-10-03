@@ -292,7 +292,7 @@ def main():
 
         # install in new namespace if requested
         if bwrap:
-            job_options['pre_eb_options'] = bwrap_prefix(job_options, module[0], install_dir)
+            job_options['pre_eb_options'] = bwrap_prefix(job_options, module[0], module[1], install_dir)
             rsync_cmds = rsync_copy(job_options, module[0], module[1], install_dir)
             job_options['postinstall'] = '\n'.join([rsync_cmds, job_options['postinstall']])
 
