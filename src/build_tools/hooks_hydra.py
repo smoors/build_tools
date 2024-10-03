@@ -128,10 +128,12 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
 
 
 def update_module_install_paths(self):
-    " update module install paths unless subdir-modules uption is specified "
-
-    # default subdir_modules config var = 'modules'
-    # in hydra we change it to 'modules/<subdir>'
+    """
+    update module install paths unless subdir-modules uption is specified "
+    default subdir_modules config var = 'modules'
+    here we set it to 'modules/<subdir>', where subdir can be any of VALID_MODULES_SUBDIRS
+    exception: with bwrap it is set to SUBDIR_MODULES_BWRAP
+    """
     configvars = ConfigurationVariables()
     subdir_modules = list(Path(configvars['subdir_modules']).parts)
 
@@ -178,7 +180,7 @@ def update_module_install_paths(self):
         self.log.info(log_msg, file)
         return
 
-    # insert subdir in self.installdir_mod and self.mod_filepath
+    # insert subdir into self.installdir_mod and self.mod_filepath
     installdir_mod = Path(self.installdir_mod).parts
     self.installdir_mod = Path().joinpath(*installdir_mod[:-1], subdir, installdir_mod[-1]).as_posix()
     self.log.info('[pre-fetch hook] Updated installdir_mod to %s.', self.installdir_mod)
