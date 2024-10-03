@@ -99,7 +99,7 @@ def main():
         "tmp-scratch": ("Use $VSC_SCRATCH as temporary disk instead of /dev/shm", None, "store_true", False, 'M'),
         "dry-run": ("Do not fetch/install, set debug log level", None, "store_true", False, 'D'),
         "pre-fetch": ("Pre-fetch sources before submitting build jobs", None, "store_true", False, 'n'),
-        "bwrap": ("Reinstall via new namespace with bwrap", None, "store_true", False, 'b'),
+        "bwrap": ("Reinstall via new namespace with bwrap (no robot)", None, "store_true", False, 'b'),
         "skip-lmod-cache": ("Do not run Lmod cache after installation", None, "store_true", False, 's'),
         "lmod-cache-only": ("Run Lmod cache and exit, no software installation", None, "store_true", False, 'o'),
     }
