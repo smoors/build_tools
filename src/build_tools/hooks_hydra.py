@@ -36,7 +36,7 @@ from easybuild.tools.hooks import SANITYCHECK_STEP
 from build_tools.clusters import ARCHS
 from build_tools.ib_modules import IB_MODULE_SOFTWARE, IB_MODULE_SUFFIX, IB_OPT_MARK
 from build_tools.lmodtools import submit_lmod_cache_job
-from build_tools.bwraptools import MOD_FILEPATH_FILENAME, BWRAP_SUBDIR
+from build_tools.bwraptools import MOD_FILEPATH_FILENAME, SUBDIR_MODULES_BWRAP
 
 # permission groups for licensed software
 SOFTWARE_GROUPS = {
@@ -135,35 +135,38 @@ def update_module_install_paths(self):
     configvars = ConfigurationVariables()
     subdir_modules = Path(configvars['subdir_modules']).parts
 
-    if len(subdir_modules) not in [1, 2] or subdir_modules[0] != 'modules':
-        log_msg = '[pre-fetch hook] Format of option subdir-modules %s is not valid. Must be modules/<subdir>.'
-        raise EasyBuildError(log_msg, os.path.join(*subdir_modules))
+    do_bwrap = subdir_modules == [SUBDIR_MODULES_BWRAP]
 
-    subdir = None
+    log_format_msg = '[pre-fetch hook] Format of option subdir-modules %s is not valid. Must be modules/<subdir>.'
+    if len(subdir_modules) not in [1, 2]:
+        raise EasyBuildError(log_format_msg, os.path.join(*subdir_modules))
+
+    if not (subdir_modules[0] == 'modules' or subdir_modules != ['modules'] or do_bwrap):
+        raise EasyBuildError(log_format_msg, os.path.join(*subdir_modules))
+
     if len(subdir_modules) == 2:
         subdir = subdir_modules[1]
 
-    if subdir in VALID_MODULES_SUBDIRS:
+        if subdir not in VALID_MODULES_SUBDIRS:
+            log_msg = "[pre-fetch hook] Specified modules subdir %s is not valid. Choose one of %s."
+            raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
+
         log_msg = "[pre-fetch hook] Option subdir-modules was set to %s, not updating module install paths."
         self.log.info(log_msg, subdir_modules)
         return
 
-    if subdir and subdir != BWRAP_SUBDIR:
-        log_msg = "[pre-fetch hook] Specified modules subdir %s is not valid. Choose one of %s."
-        raise EasyBuildError(log_msg, subdir, VALID_MODULES_SUBDIRS)
+    subdir, log_msg = calc_tc_gen(
+        self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
 
     if not subdir:
-        # no subdir-modules set, let’s calculate it
-        subdir, log_msg = calc_tc_gen(
-            self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
-        if not subdir:
-            raise EasyBuildError("[pre-fetch hook] " + log_msg)
-        self.log.info("[pre-fetch hook] " + log_msg)
+        raise EasyBuildError("[pre-fetch hook] " + log_msg)
+
+    self.log.info("[pre-fetch hook] " + log_msg)
 
     mod_filepath = Path(self.mod_filepath).parts
     new_mod_filepath = Path().joinpath(*mod_filepath[:-3], subdir, *mod_filepath[-3:]).as_posix()
 
-    if subdir == BWRAP_SUBDIR:
+    if do_bwrap:
         # create file containing the real module file path, next to the module file
         # the module file should be copied to the real path after installation with bwrap
         file = Path().joinpath(*mod_filepath[:-1], MOD_FILEPATH_FILENAME).as_posix()

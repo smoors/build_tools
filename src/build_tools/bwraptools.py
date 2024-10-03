@@ -27,7 +27,7 @@ from build_tools.filetools import APPS_BRUSSEL
 logger = fancylogger.getLogger()
 
 BWRAP_PATH = os.path.join(APPS_BRUSSEL, 'bwrap', '$VSC_OS_LOCAL')
-BWRAP_SUBDIR = 'bwrap'
+SUBDIR_MODULES_BWRAP = 'modules_bwrap'
 MOD_FILEPATH_FILENAME = 'modules_subdir.txt'
 
 
@@ -39,7 +39,7 @@ def bwrap_prefix(job_options, modname, arch):
     :param arch: architecture-specific installation subdirectory
     """
     real_installpath = os.path.realpath(job_options['eb_installpath'])
-    mod_subdir = os.path.join('modules', BWRAP_SUBDIR, 'all', modname)
+    mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
     soft_subdir = os.path.join('software', modname)
 
     soft_source = os.path.join(BWRAP_PATH, arch, soft_subdir)
@@ -80,7 +80,7 @@ def rsync_copy(job_options, modname, modversion, arch):
     source_soft_path = os.path.join(BWRAP_PATH, arch, rel_soft_path)
     dest_soft_path = os.path.join(dest_path, rel_soft_path)
 
-    source_mod_path = os.path.join(BWRAP_PATH, arch, 'modules', BWRAP_SUBDIR, 'all', modname)
+    source_mod_path = os.path.join(BWRAP_PATH, arch, SUBDIR_MODULES_BWRAP, 'all', modname)
     source_mod_file = os.path.join(source_mod_path, f'{modversion}.lua')
 
     rsync_software = ' '.join([
