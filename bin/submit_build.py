@@ -28,7 +28,7 @@ from vsc.utils.script_tools import SimpleOption
 from vsc.utils.run import RunNoShell
 
 from build_tools import hooks_hydra
-from build_tools.bwraptools import bwrap_prefix, rsync_copy
+from build_tools.bwraptools import bwrap_prefix, rsync_copy, SUBDIR_MODULES_BWRAP
 from build_tools.clusters import ARCHS, PARTITIONS
 from build_tools.filetools import APPS_BRUSSEL, get_module
 from build_tools.lmodtools import submit_lmod_cache_job
@@ -243,7 +243,7 @@ def main():
         eb_options = ['--logtostdout', '--debug', '--module-extensions', '--zip-logs=bzip2', '--module-depends-on']
 
         if bwrap:
-            eb_options.extend([' --rebuild', '--subdir-modules=modules/bwrap'])
+            eb_options.extend([' --rebuild', f'--subdir-modules={SUBDIR_MODULES_BWRAP}'])
         else:
             eb_options.append('--robot')  # not supported with bwrap
 
