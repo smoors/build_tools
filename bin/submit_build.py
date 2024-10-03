@@ -239,15 +239,17 @@ def main():
             job['tmp'] = os.path.join('$VSC_SCRATCH', job_options['target_arch'])
         ebconf['buildpath'] = os.path.join(job['tmp'], 'eb-submit-build')
 
-        # generate EB command line options
-        eb_options = ['--robot', '--logtostdout', '--debug', '--module-extensions', '--zip-logs=bzip2']
+        # common EB command line options
+        eb_options = ['--logtostdout', '--debug', '--module-extensions', '--zip-logs=bzip2', '--module-depends-on']
+
+        if bwrap:
+            eb_options.extend([' --rebuild', '--subdir-modules=modules/bwrap'])
+        else:
+            eb_options.append('--robot')  # not supported with bwrap
 
         # cross-compilation
         if job_options['target_arch'] != host_arch:
             eb_options.extend(['--optarch', ARCHS[job_options['target_arch']]['opt']])
-
-        # use depends_on in Lmod
-        eb_options.append("--module-depends-on")
 
         # extra settings from user
         if opts.options.extra_flags:
@@ -290,7 +292,6 @@ def main():
 
         # install in new namespace if requested
         if bwrap:
-            job_options['eb_options'] += ' --rebuild'
             job_options['pre_eb_options'] = bwrap_prefix(job_options, module[0], install_dir)
             rsync_cmds = rsync_copy(job_options, module[0], module[1], install_dir)
             job_options['postinstall'] = '\n'.join([rsync_cmds, job_options['postinstall']])
