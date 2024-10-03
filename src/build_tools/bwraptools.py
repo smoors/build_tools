@@ -39,13 +39,14 @@ def bwrap_prefix(job_options, modname, arch):
     :param arch: architecture-specific installation subdirectory
     """
     real_installpath = os.path.realpath(job_options['eb_installpath'])
-    # mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
+    mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
     soft_subdir = os.path.join('software', modname)
 
     soft_source = os.path.join(BWRAP_PATH, arch, soft_subdir)
     soft_dest = os.path.join(real_installpath, soft_subdir)
 
     # mod_source = os.path.join(BWRAP_PATH, arch, mod_subdir)
+    mod_source = os.path.join(real_installpath, mod_subdir)
     # mod_dest = os.path.join(real_installpath, mod_subdir)
 
     if not os.path.isdir(soft_dest):
@@ -53,7 +54,7 @@ def bwrap_prefix(job_options, modname, arch):
 
     return ' '.join([
         f'mkdir -p {soft_source} &&',
-        # f'mkdir -p {mod_source} &&',
+        f'mkdir -p {mod_source} &&',
         'bwrap',
         '--bind / /',
         f'--bind {soft_source} {soft_dest}',
