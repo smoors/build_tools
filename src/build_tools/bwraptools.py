@@ -29,10 +29,10 @@ logger = fancylogger.getLogger()
 BWRAP_PATH = os.path.join(APPS_BRUSSEL, 'bwrap', '$VSC_OS_LOCAL')
 SUBDIR_MODULES_BWRAP = '.modules_bwrap'
 # MOD_FILEPATH_FILENAME = 'module_filepath.txt'
-MOD_FILEPATH_FILENAME = '.{modversion}_filepath.txt'
+MOD_FILEPATH_FILENAME = '{modversion}_fp.txt'
 
 
-def bwrap_prefix(job_options, modname, modversion, arch):
+def bwrap_prefix(job_options, modname, arch):
     """
     Create the bwrap prefix command string
     :param job_options: dict with options to pass to job template
@@ -41,7 +41,8 @@ def bwrap_prefix(job_options, modname, modversion, arch):
     """
     real_installpath = os.path.realpath(job_options['eb_installpath'])
     mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
-    soft_subdir = os.path.join('software', modname, modversion)
+    # we cannot use software/modname/modversion here, otherwise EB cannot "remove" the old installation
+    soft_subdir = os.path.join('software', modname)
 
     soft_source = os.path.join(BWRAP_PATH, arch, soft_subdir)
     soft_dest = os.path.join(real_installpath, soft_subdir)
@@ -98,7 +99,7 @@ def rsync_copy(job_options, modname, modversion, arch):
         source_mod_file,
     ])
     return '\n'.join([
-        f'dest_mod_file=$(<{source_mod_path}/{MOD_FILEPATH_FILENAME})',
+        f'dest_mod_file=$(<{source_mod_path}/{MOD_FILEPATH_FILENAME.format(modversion=modversion)})',
         f'echo "bwrap install dir: {source_soft_path}"',
         f'echo "destination install dir: {dest_soft_path}"',
         f'echo "source module file: {source_mod_file}"',

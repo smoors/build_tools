@@ -167,7 +167,7 @@ def update_module_install_paths(self):
 
     if do_bwrap:
         real_mod_filepath = Path().joinpath(*mod_filepath[:-4], 'modules', subdir, *mod_filepath[-3:]).as_posix()
-        modversion = mod_filepath[-1]
+        modversion = mod_filepath[-1].removesuffix('.lua')
         file = Path().joinpath(*mod_filepath[:-1], MOD_FILEPATH_FILENAME.format(modversion=modversion)).as_posix()
         # create file containing the real module file path, next to the module file
         # the module file should be copied to the real path after installation with bwrap
