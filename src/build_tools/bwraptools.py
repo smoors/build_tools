@@ -27,8 +27,8 @@ from build_tools.filetools import APPS_BRUSSEL
 logger = fancylogger.getLogger()
 
 BWRAP_PATH = os.path.join(APPS_BRUSSEL, 'bwrap', '$VSC_OS_LOCAL')
-SUBDIR_MODULES_BWRAP = 'modules_bwrap'
-MOD_FILEPATH_FILENAME = 'modules_subdir.txt'
+SUBDIR_MODULES_BWRAP = '.modules_bwrap'
+MOD_FILEPATH_FILENAME = 'module_filepath.txt'
 
 
 def bwrap_prefix(job_options, modname, arch):
@@ -39,25 +39,25 @@ def bwrap_prefix(job_options, modname, arch):
     :param arch: architecture-specific installation subdirectory
     """
     real_installpath = os.path.realpath(job_options['eb_installpath'])
-    mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
+    # mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
     soft_subdir = os.path.join('software', modname)
 
     soft_source = os.path.join(BWRAP_PATH, arch, soft_subdir)
     soft_dest = os.path.join(real_installpath, soft_subdir)
 
-    mod_source = os.path.join(BWRAP_PATH, arch, mod_subdir)
-    mod_dest = os.path.join(real_installpath, mod_subdir)
+    # mod_source = os.path.join(BWRAP_PATH, arch, mod_subdir)
+    # mod_dest = os.path.join(real_installpath, mod_subdir)
 
     if not os.path.isdir(soft_dest):
         logger.error("Bind destination does not exist: %s", soft_dest)
 
     return ' '.join([
         f'mkdir -p {soft_source} &&',
-        f'mkdir -p {mod_source} &&',
+        # f'mkdir -p {mod_source} &&',
         'bwrap',
         '--bind / /',
         f'--bind {soft_source} {soft_dest}',
-        f'--bind {mod_source} {mod_dest}',
+        # f'--bind {mod_source} {mod_dest}',
         '--dev /dev',
         '--bind /dev/log /dev/log',
     ])
@@ -80,7 +80,8 @@ def rsync_copy(job_options, modname, modversion, arch):
     source_soft_path = os.path.join(BWRAP_PATH, arch, rel_soft_path)
     dest_soft_path = os.path.join(dest_path, rel_soft_path)
 
-    source_mod_path = os.path.join(BWRAP_PATH, arch, SUBDIR_MODULES_BWRAP, 'all', modname)
+    # source_mod_path = os.path.join(BWRAP_PATH, arch, SUBDIR_MODULES_BWRAP, 'all', modname)
+    source_mod_path = os.path.join(dest_path, SUBDIR_MODULES_BWRAP, 'all', modname)
     source_mod_file = os.path.join(source_mod_path, f'{modversion}.lua')
 
     rsync_software = ' '.join([
@@ -99,11 +100,11 @@ def rsync_copy(job_options, modname, modversion, arch):
         f'dest_mod_file="{dest_path}/modules/$dest_subdir/all/{modname}/{modversion}.lua"',
         f'echo "bwrap install dir: {source_soft_path}"',
         f'echo "destination install dir: {dest_soft_path}"',
-        f'echo "bwrap module file: {source_mod_file}"',
+        f'echo "source module file: {source_mod_file}"',
         'echo "destination module file: $dest_mod_file"',
         f'test -d {source_soft_path} || {{ echo "ERROR: bwrap install dir does not exist"; exit 1; }}',
         f'test "$(ls -A {source_soft_path})" || {{ echo "ERROR: bwrap install dir empty"; exit 1; }}',
-        f'test -s {source_mod_file} || {{ echo "ERROR: bwrap module file does not exist or empty"; exit 1; }}',
+        f'test -s {source_mod_file} || {{ echo "ERROR: source module file does not exist or is empty"; exit 1; }}',
         f'{rsync_software} || {{ echo "ERROR: failed to copy bwrap install dir"; exit 1; }}',
         f'{rsync_module} "$dest_mod_file" || {{ echo "ERROR: failed to copy bwrap module file"; exit 1; }}',
         f'rm -rf {source_soft_path} {source_mod_file}',

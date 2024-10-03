@@ -133,7 +133,7 @@ def update_module_install_paths(self):
     # default subdir_modules config var = 'modules'
     # in hydra we change it to 'modules/<subdir>'
     configvars = ConfigurationVariables()
-    subdir_modules = Path(configvars['subdir_modules']).parts
+    subdir_modules = list(Path(configvars['subdir_modules']).parts)
 
     do_bwrap = subdir_modules == [SUBDIR_MODULES_BWRAP]
 
