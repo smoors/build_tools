@@ -164,12 +164,12 @@ def update_module_install_paths(self):
     self.log.info("[pre-fetch hook] " + log_msg)
 
     mod_filepath = Path(self.mod_filepath).parts
-    new_mod_filepath = Path().joinpath(*mod_filepath[:-3], subdir, *mod_filepath[-3:]).as_posix()
 
     if do_bwrap:
+        new_mod_filepath = Path().joinpath(*mod_filepath[:-4], 'modules', subdir, *mod_filepath[-3:]).as_posix()
+        file = Path().joinpath(*mod_filepath[:-1], MOD_FILEPATH_FILENAME).as_posix()
         # create file containing the real module file path, next to the module file
         # the module file should be copied to the real path after installation with bwrap
-        file = Path().joinpath(*mod_filepath[:-1], MOD_FILEPATH_FILENAME).as_posix()
         with open(file, 'w') as f:
             f.write(new_mod_filepath)
         log_msg = ("[pre-fetch hook] Installing in new namespace with bwrap, "
@@ -182,6 +182,7 @@ def update_module_install_paths(self):
     self.installdir_mod = Path().joinpath(*installdir_mod[:-1], subdir, installdir_mod[-1]).as_posix()
     self.log.info('[pre-fetch hook] Updated installdir_mod to %s.', self.installdir_mod)
 
+    new_mod_filepath = Path().joinpath(*mod_filepath[:-3], subdir, *mod_filepath[-3:]).as_posix()
     self.mod_filepath = new_mod_filepath
     self.log.info('[pre-fetch hook] Updated mod_filepath to %s.', self.mod_filepath)
 
