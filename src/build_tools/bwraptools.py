@@ -28,7 +28,8 @@ logger = fancylogger.getLogger()
 
 BWRAP_PATH = os.path.join(APPS_BRUSSEL, 'bwrap', '$VSC_OS_LOCAL')
 SUBDIR_MODULES_BWRAP = '.modules_bwrap'
-MOD_FILEPATH_FILENAME = 'module_filepath.txt'
+# MOD_FILEPATH_FILENAME = 'module_filepath.txt'
+MOD_FILEPATH_FILENAME = '.{modversion}_filepath.txt'
 
 
 def bwrap_prefix(job_options, modname, modversion, arch):
