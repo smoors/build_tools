@@ -28,7 +28,6 @@ logger = fancylogger.getLogger()
 
 BWRAP_PATH = os.path.join(APPS_BRUSSEL, 'bwrap', '$VSC_OS_LOCAL')
 SUBDIR_MODULES_BWRAP = '.modules_bwrap'
-# MOD_FILEPATH_FILENAME = 'module_filepath.txt'
 MOD_FILEPATH_FILENAME = '{modversion}_fp.txt'
 
 
@@ -41,7 +40,7 @@ def bwrap_prefix(job_options, modname, arch):
     """
     real_installpath = os.path.realpath(job_options['eb_installpath'])
     mod_subdir = os.path.join(SUBDIR_MODULES_BWRAP, 'all', modname)
-    # we cannot use 'software/<modname>/<modversion>' here, otherwise EB cannot "remove" the old installation
+    # cannot use 'software/<modname>/<modversion>' here, otherwise EB cannot "remove" the old installation
     soft_subdir = os.path.join('software', modname)
 
     soft_source = os.path.join(BWRAP_PATH, arch, soft_subdir)
@@ -52,9 +51,8 @@ def bwrap_prefix(job_options, modname, arch):
     if not os.path.isdir(soft_dest):
         logger.error("Bind destination does not exist: %s", soft_dest)
 
-    # create a temporary dir for the module, but don’t bind it:
-    # we don’t know the final location yet, and it’s not needed for modules
-    # binding is only needed for the software itself
+    # create a temporary dir for the module, but don’t bind it with bwrap:
+    # the final location is not known yet, and module files don’t need a new namespace anyway
     return ' '.join([
         f'mkdir -p "{soft_source}" &&',
         f'mkdir -p "{mod_source}" &&',
@@ -85,7 +83,6 @@ def rsync_copy(job_options, modname, modversion, arch):
 
     source_mod_path = os.path.join(dest_path, SUBDIR_MODULES_BWRAP, 'all', modname)
     source_mod_file = os.path.join(source_mod_path, f'{modversion}.lua')
-
     mod_filepath_file = os.path.join(source_mod_path, MOD_FILEPATH_FILENAME.format(modversion=modversion))
 
     rsync_software = ' '.join([
@@ -101,14 +98,14 @@ def rsync_copy(job_options, modname, modversion, arch):
     ])
     return '\n'.join([
         f'dest_mod_file=$(<"{mod_filepath_file}")',
-        f'echo "bwrap install dir: {source_soft_path}"',
+        f'echo "source install dir: {source_soft_path}"',
         f'echo "destination install dir: {dest_soft_path}"',
         f'echo "source module file: {source_mod_file}"',
         'echo "destination module file: $dest_mod_file"',
-        f'test -d "{source_soft_path}" || {{ echo "ERROR: bwrap install dir does not exist"; exit 1; }}',
-        f'test -n "$(ls -A {source_soft_path})" || {{ echo "ERROR: bwrap install dir is empty"; exit 1; }}',
+        f'test -d "{source_soft_path}" || {{ echo "ERROR: source install dir does not exist"; exit 1; }}',
+        f'test -n "$(ls -A {source_soft_path})" || {{ echo "ERROR: source install dir is empty"; exit 1; }}',
         f'test -s "{source_mod_file}" || {{ echo "ERROR: source module file does not exist or is empty"; exit 1; }}',
-        f'# {rsync_software} || {{ echo "ERROR: failed to copy bwrap install dir"; exit 1; }}',
-        f'# {rsync_module} "$dest_mod_file" || {{ echo "ERROR: failed to copy bwrap module file"; exit 1; }}',
-        f'# rm -rf "{source_soft_path}" "{source_mod_file}" "{mod_filepath_file}"',
+        f'{rsync_software} || {{ echo "ERROR: failed to copy source install dir"; exit 1; }}',
+        f'{rsync_module} "$dest_mod_file" || {{ echo "ERROR: failed to copy source module file"; exit 1; }}',
+        f'rm -rf "{source_soft_path}" "{source_mod_file}" "{mod_filepath_file}"',
     ])
