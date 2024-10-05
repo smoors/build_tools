@@ -15,6 +15,7 @@ Functions related to running the Lmod cache
 
 @author: Samuel Moors (Vrije Universiteit Brussel)
 """
+import os
 import sys
 
 from vsc.utils import fancylogger
@@ -31,14 +32,14 @@ LMOD_CACHE_JOB_TEMPLATE = """#!/bin/bash
 #SBATCH --time=1:0:0
 #SBATCH --mem=1g
 #SBATCH --output=%x_%j.log
-#SBATCH --job-name=lmod_cache_{archdir}
+#SBATCH --job-name={jobname}
 #SBATCH --dependency=singleton{jobids_depend}
 #SBATCH --partition={partition}
 {cache_cmd}
 """
 
 
-def submit_lmod_cache_job(partition, jobids_depend=None, cluster=None, **kwargs):
+def submit_lmod_cache_job(partition, jobids_depend=None, cluster=None, sub_options='', **kwargs):
     """
     Run Lmod cache in a Slurm job
     :param partition: the partition to submit the job to
@@ -64,14 +65,14 @@ def submit_lmod_cache_job(partition, jobids_depend=None, cluster=None, **kwargs)
         jobids_depend=f',afterok:{":".join(jobids_depend)}' if jobids_depend else '',
         partition=partition,
         cache_cmd=' '.join(cache_cmd),
-        archdir=archdir,
+        jobname=os.getenv('BUILD_TOOLS_LMOD_CACHE_JOBNAME', f'lmod_cache_{archdir}'),
     )
 
     job_file = write_tempfile(cache_job)
 
     logger.info(
         "Refreshing Lmod cache on partition %s for architecture %s", partition or 'default', archdir or 'default')
-    ec, out = submit_job_script(job_file, cluster=cluster, **kwargs)
+    ec, out = submit_job_script(job_file, cluster=cluster, sub_options=sub_options, **kwargs)
 
     if ec != 0:
         logger.error("Failed to submit Lmod cache job: %s", out)

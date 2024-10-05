@@ -572,7 +572,8 @@ def post_build_and_install_loop_hook(ecs_with_res):
                     'for partition %s', slurm_job_partition)
         # submit Lmod cache job
         # set cluster=False to avoid loading cluster module in job
-        submit_lmod_cache_job(slurm_job_partition, cluster=False)
+        # set --hold to ensure that lmod cache runs after copying bwrap installation to real location
+        submit_lmod_cache_job(slurm_job_partition, cluster=False, sub_options='--hold')
 
     else:
         log_msg = ['[post_build_and_install_loop hook] Not running Lmod cache job:']

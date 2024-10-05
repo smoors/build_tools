@@ -14,8 +14,10 @@ if [ -z $PREFIX_EB ]; then
 fi
 
 # set environment
+local_arch="$VSC_ARCH_LOCAL$VSC_ARCH_SUFFIX"
 export BUILD_TOOLS_LOAD_DUMMY_MODULES=1
 export BUILD_TOOLS_RUN_LMOD_CACHE=1
+export BUILD_TOOLS_LMOD_CACHE_JOBNAME="lmod_cache_$local_arch"
 export LANG=C
 export PATH=$PREFIX_EB/easybuild-framework:$PATH
 export PYTHONPATH=$PREFIX_EB/easybuild-easyconfigs:$PREFIX_EB/easybuild-easyblocks:$PREFIX_EB/easybuild-framework:$PREFIX_EB/vsc-base/lib
@@ -28,7 +30,6 @@ mkdir -p $TMPDIR
 mkdir -p /tmp/eb-test-build
 
 # update MODULEPATH for cross-compilations
-local_arch="$VSC_ARCH_LOCAL$VSC_ARCH_SUFFIX"
 if [ "skylake" != "$local_arch" ]; then
     export MODULEPATH=${MODULEPATH//$local_arch/skylake}
 fi
@@ -41,3 +42,7 @@ if [ $? -ne 0 ]; then
     fi
     exit 1
 fi
+
+
+
+scontrol -Q release jobname="$BUILD_TOOLS_LMOD_CACHE_JOBNAME" || :
