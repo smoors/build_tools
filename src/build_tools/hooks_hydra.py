@@ -29,7 +29,7 @@ from easybuild.framework.easyconfig.constants import EASYCONFIG_CONSTANTS
 from easybuild.framework.easyconfig.easyconfig import letter_dir_for, get_toolchain_hierarchy
 from easybuild.tools import LooseVersion
 from easybuild.tools.build_log import EasyBuildError
-from easybuild.tools.config import source_paths, ConfigurationVariables
+from easybuild.tools.config import BuildOptions, ConfigurationVariables, source_paths, update_build_option
 from easybuild.tools.filetools import mkdir
 from easybuild.tools.hooks import SANITYCHECK_STEP
 
@@ -229,7 +229,15 @@ def release_fetch_lock(self):
 
 
 def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
-    """Alter the parameters of easyconfigs"""
+    """Alter build options and easyconfig parameters"""
+
+    # disable robot for bwrap
+    # must be done in a hook in case robot is set in an easystack, which takes precedence over cmd line options
+    subdir_modules = ConfigurationVariables()['subdir_modules']
+    robot = BuildOptions()['robot']
+    if subdir_modules == SUBDIR_MODULES_BWRAP and robot is not None:
+        update_build_option('robot', None)
+        ec.log.warning("[parse hook] Disabled robot for bwrap")
 
     # PMIx deps and sanity checks for munge
     if ec.name == 'PMIx':
