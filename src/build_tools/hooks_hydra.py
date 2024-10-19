@@ -36,8 +36,8 @@ from easybuild.tools.hooks import SANITYCHECK_STEP
 
 from build_tools.clusters import ARCHS
 from build_tools.ib_modules import IB_MODULE_SOFTWARE, IB_MODULE_SUFFIX, IB_OPT_MARK
-from build_tools.lmodtools import submit_lmod_cache_job
-from build_tools.bwraptools import MOD_FILEPATH_FILENAME, SUBDIR_MODULES_BWRAP
+# from build_tools.lmodtools import submit_lmod_cache_job
+from build_tools.bwraptools import SUBDIR_MODULES_BWRAP
 
 # permission groups for licensed software
 SOFTWARE_GROUPS = {

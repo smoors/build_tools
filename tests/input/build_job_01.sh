@@ -59,9 +59,11 @@ if [ -n "$lmod_cache" ];then
         --dependency=singleton
         --partition=skylake_mpi
     )
-    cmd="/usr/libexec/lmod/run_lmod_cache.py \
-        --create-cache \
-        --architecture skylake \
-        --module-basedir /apps/brussel/$VSC_OS_LOCAL"
-    sbatch "${job_options[@]}" --wrap "$cmd"
+    cmd=(
+        /usr/libexec/lmod/run_lmod_cache.py
+        --create-cache
+        --architecture ${target_arch}
+        --module-basedir /apps/brussel/$$VSC_OS_LOCAL
+    )
+    sbatch "${job_options[@]}" --wrap "${cmd[*]}"
 fi

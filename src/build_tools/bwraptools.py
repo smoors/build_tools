@@ -97,7 +97,8 @@ def rsync_copy(job_options, modname, modversion, arch):
         source_mod_file,
     ])
     return '\n'.join([
-        f'dest_mod_file=$(<"{mod_filepath_file}")',
+        'dest_mod_file=$(grep "^BUILD_TOOLS: real_mod_filepath" "$eb_stderr" | cut -d " " -f 3)',
+        'test -n "$dest_mod_file" || {{ echo "ERROR: failed to obtain destination module file path"; exit 1; }}',
         f'echo "source install dir: {source_soft_path}"',
         f'echo "destination install dir: {dest_soft_path}"',
         f'echo "source module file: {source_mod_file}"',

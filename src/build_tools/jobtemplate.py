@@ -87,8 +87,7 @@ if [ -n "$$lmod_cache" ];then
         --architecture ${target_arch}
         --module-basedir /apps/brussel/$$VSC_OS_LOCAL
     )
-    cmd="$${cmd[@]}"
-    sbatch "$${job_options[@]}" --wrap "$$cmd"
+    sbatch "$${job_options[@]}" --wrap "$${cmd[*]}"
 fi
 
 """  # noqa

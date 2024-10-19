@@ -43,3 +43,23 @@ if [ $? -ne 0 ]; then
 fi
 
 rsync src dest
+
+lmod_cache=$(grep "^BUILD_TOOLS: submit_lmod_cache_job" "$eb_stderr")
+if [ -n "$lmod_cache" ];then
+    job_options=(
+        --wait
+        --time=1:0:0
+        --mem=1g
+        --output=%x_%j.log
+        --job-name=lmod_cache_zen2-ib
+        --dependency=singleton
+        --partition=ampere_gpu
+    )
+    cmd=(
+        /usr/libexec/lmod/run_lmod_cache.py
+        --create-cache
+        --architecture ${target_arch}
+        --module-basedir /apps/brussel/$$VSC_OS_LOCAL
+    )
+    sbatch "${job_options[@]}" --wrap "${cmd[*]}"
+fi
