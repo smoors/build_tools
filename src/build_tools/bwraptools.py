@@ -83,7 +83,6 @@ def rsync_copy(job_options, modname, modversion, arch):
 
     source_mod_path = os.path.join(dest_path, SUBDIR_MODULES_BWRAP, 'all', modname)
     source_mod_file = os.path.join(source_mod_path, f'{modversion}.lua')
-    mod_filepath_file = os.path.join(source_mod_path, MOD_FILEPATH_FILENAME.format(modversion=modversion))
 
     rsync_software = ' '.join([
         'rsync -a',
@@ -98,7 +97,7 @@ def rsync_copy(job_options, modname, modversion, arch):
     ])
     return '\n'.join([
         'dest_mod_file=$(grep "^BUILD_TOOLS: real_mod_filepath" "$eb_stderr" | cut -d " " -f 3)',
-        'test -n "$dest_mod_file" || {{ echo "ERROR: failed to obtain destination module file path"; exit 1; }}',
+        'test -n "$dest_mod_file" || { echo "ERROR: failed to obtain destination module file path"; exit 1; }',
         f'echo "source install dir: {source_soft_path}"',
         f'echo "destination install dir: {dest_soft_path}"',
         f'echo "source module file: {source_mod_file}"',
@@ -108,5 +107,5 @@ def rsync_copy(job_options, modname, modversion, arch):
         f'test -s "{source_mod_file}" || {{ echo "ERROR: source module file does not exist or is empty"; exit 1; }}',
         f'{rsync_software} || {{ echo "ERROR: failed to copy source install dir"; exit 1; }}',
         f'{rsync_module} "$dest_mod_file" || {{ echo "ERROR: failed to copy source module file"; exit 1; }}',
-        f'rm -rf "{source_soft_path}" "{source_mod_file}" "{mod_filepath_file}"',
+        f'rm -rf "{source_soft_path}" "{source_mod_file}"',
     ])

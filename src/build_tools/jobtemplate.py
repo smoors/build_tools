@@ -65,7 +65,7 @@ if [ $$ec -ne 0 ]; then
     if [ -n "$$SLURM_JOB_ID" ]; then
         rm -rf ${eb_buildpath}
     fi
-    exit 1
+    exit $$ec
 fi
 
 ${postinstall}

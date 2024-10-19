@@ -39,7 +39,7 @@ if [ $? -ne 0 ]; then
     if [ -n "$SLURM_JOB_ID" ]; then
         rm -rf /tmp/eb-test-build
     fi
-    exit 1
+    exit $ec
 fi
 
 rsync src dest
