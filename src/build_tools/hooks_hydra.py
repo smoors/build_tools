@@ -19,6 +19,7 @@ Custom EasyBuild hooks for VUB-HPC Clusters
 
 import os
 from pathlib import Path
+import sys
 import time
 
 from flufl.lock import Lock, TimeOutError, NotLockedError
@@ -162,15 +163,16 @@ def update_module_install_paths(self):
     if do_bwrap:
         self.log.info("[pre-fetch hook] Installing in new namespace with bwrap")
         real_mod_filepath = Path().joinpath(*mod_filepath[:-4], 'modules', subdir, *mod_filepath[-3:]).as_posix()
-        modversion = mod_filepath[-1].removesuffix('.lua')
-        mod_filepath_file = Path().joinpath(
-            *mod_filepath[:-1], MOD_FILEPATH_FILENAME.format(modversion=modversion)).as_posix()
+        # modversion = mod_filepath[-1].removesuffix('.lua')
+        # mod_filepath_file = Path().joinpath(
+        #     *mod_filepath[:-1], MOD_FILEPATH_FILENAME.format(modversion=modversion)).as_posix()
 
         # create file containing the real module file path, in the same dir as the module file
         # after installation, the module file is copied to the real path
-        with open(mod_filepath_file, 'w') as f:
-            f.write(real_mod_filepath)
-        self.log.info("Created file %s containing real module file path", mod_filepath_file)
+        # with open(mod_filepath_file, 'w') as f:
+        #     f.write(real_mod_filepath)
+        # self.log.info("Created file %s containing real module file path", mod_filepath_file)
+        sys.stderr.write(f'BUILD_TOOLS: real_mod_filepath {real_mod_filepath}\n')
         return
 
     # insert subdir into self.installdir_mod and self.mod_filepath
@@ -576,11 +578,12 @@ def post_build_and_install_loop_hook(ecs_with_res):
     slurm_job_partition = os.getenv('SLURM_JOB_PARTITION')
 
     if all([build_tools_lmod, builds_succeeded, slurm_job_partition]):
-        logger.info('[post_build_and_install_loop hook] Submitting Lmod cache job '
-                    'for partition %s', slurm_job_partition)
-        # submit Lmod cache job
-        # set cluster=False to avoid loading cluster module in job
-        submit_lmod_cache_job(slurm_job_partition, cluster=False)
+        # logger.info('[post_build_and_install_loop hook] Submitting Lmod cache job '
+        #             'for partition %s', slurm_job_partition)
+        # # submit Lmod cache job
+        # # set cluster=False to avoid loading cluster module in job
+        # submit_lmod_cache_job(slurm_job_partition, cluster=False)
+        sys.stderr.write('BUILD_TOOLS: submit_lmod_cache_job\n')
 
     else:
         log_msg = ['[post_build_and_install_loop hook] Not running Lmod cache job:']

@@ -33,11 +33,37 @@ if [ "skylake" != "$local_arch" ]; then
     export MODULEPATH=${MODULEPATH//$local_arch/skylake}
 fi
 
- eb 
+eb_stderr=$(mktemp).eb_stderr
+ eb  2>"$eb_stderr"
 
-if [ $? -ne 0 ]; then
+ec=$?
+cat "$eb_stderr" >/dev/stderr
+
+if [ $ec -ne 0 ]; then
     if [ -n "$SLURM_JOB_ID" ]; then
         rm -rf /tmp/eb-test-build
     fi
     exit 1
+fi
+
+
+
+lmod_cache=$(grep "^BUILD_TOOLS: submit_lmod_cache_job" "$eb_stderr")
+if [ -n "$lmod_cache" ];then
+    job_options=(
+        --wait
+        --time=1:0:0
+        --mem=1g
+        --output=%x_%j.log
+        --job-name=lmod_cache_skylake
+        --dependency=singleton
+        --partition=skylake_mpi
+    )
+    cmd=(
+        /usr/libexec/lmod/run_lmod_cache.py
+        --create-cache
+        --architecture skylake
+        --module-basedir /apps/brussel/$VSC_OS_LOCAL
+    )
+    sbatch "${job_options[@]}" --wrap "${cmd[@]}"
 fi
