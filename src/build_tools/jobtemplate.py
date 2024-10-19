@@ -81,10 +81,13 @@ if [ -n "$$lmod_cache" ];then
         --dependency=singleton
         --partition=${partition}
     )
-    cmd="/usr/libexec/lmod/run_lmod_cache.py \
-        --create-cache \
-        --architecture ${target_arch} \
-        --module-basedir /apps/brussel/$$VSC_OS_LOCAL"
+    cmd=(
+        /usr/libexec/lmod/run_lmod_cache.py
+        --create-cache
+        --architecture ${target_arch}
+        --module-basedir /apps/brussel/$$VSC_OS_LOCAL
+    )
+    cmd="$${cmd[@]}"
     sbatch "$${job_options[@]}" --wrap "$$cmd"
 fi
 
