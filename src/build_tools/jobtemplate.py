@@ -37,7 +37,6 @@ fi
 
 # set environment
 export BUILD_TOOLS_LOAD_DUMMY_MODULES=1
-export BUILD_TOOLS_RUN_LMOD_CACHE=${lmod_cache}
 export LANG=${langcode}
 export PATH=$$PREFIX_EB/easybuild-framework:$$PATH
 export PYTHONPATH=$$PREFIX_EB/easybuild-easyconfigs:$$PREFIX_EB/easybuild-easyblocks:$$PREFIX_EB/easybuild-framework:$$PREFIX_EB/vsc-base/lib
@@ -70,8 +69,8 @@ fi
 
 ${postinstall}
 
-lmod_cache=$$(grep "^BUILD_TOOLS: submit_lmod_cache_job" "$$eb_stderr")
-if [ -n "$$lmod_cache" ];then
+builds_succeeded=$$(grep "^BUILD_TOOLS: builds_succeeded" "$$eb_stderr")
+if [[ "${lmod_cache}" == 1 && -n "$${builds_succeeded}" ]];then
     job_options=(
         --wait
         --time=1:0:0
@@ -87,6 +86,7 @@ if [ -n "$$lmod_cache" ];then
         --architecture ${target_arch}
         --module-basedir /apps/brussel/$$VSC_OS_LOCAL
     )
+    echo "submitting Lmod cache update job on partition ${partition} for architecture ${target_arch}"
     sbatch "$${job_options[@]}" --wrap "$${cmd[*]}"
 fi
 

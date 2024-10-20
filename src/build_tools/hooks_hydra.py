@@ -24,8 +24,6 @@ import time
 
 from flufl.lock import Lock, TimeOutError, NotLockedError
 
-from vsc.utils import fancylogger
-
 from easybuild.framework.easyconfig.constants import EASYCONFIG_CONSTANTS
 from easybuild.framework.easyconfig.easyconfig import letter_dir_for, get_toolchain_hierarchy
 from easybuild.tools import LooseVersion
@@ -36,7 +34,6 @@ from easybuild.tools.hooks import SANITYCHECK_STEP
 
 from build_tools.clusters import ARCHS
 from build_tools.ib_modules import IB_MODULE_SOFTWARE, IB_MODULE_SUFFIX, IB_OPT_MARK
-# from build_tools.lmodtools import submit_lmod_cache_job
 from build_tools.bwraptools import SUBDIR_MODULES_BWRAP
 
 # permission groups for licensed software
@@ -163,15 +160,9 @@ def update_module_install_paths(self):
     if do_bwrap:
         self.log.info("[pre-fetch hook] Installing in new namespace with bwrap")
         real_mod_filepath = Path().joinpath(*mod_filepath[:-4], 'modules', subdir, *mod_filepath[-3:]).as_posix()
-        # modversion = mod_filepath[-1].removesuffix('.lua')
-        # mod_filepath_file = Path().joinpath(
-        #     *mod_filepath[:-1], MOD_FILEPATH_FILENAME.format(modversion=modversion)).as_posix()
 
-        # create file containing the real module file path, in the same dir as the module file
+        # write the real module file path to stderr
         # after installation, the module file is copied to the real path
-        # with open(mod_filepath_file, 'w') as f:
-        #     f.write(real_mod_filepath)
-        # self.log.info("Created file %s containing real module file path", mod_filepath_file)
         sys.stderr.write(f'BUILD_TOOLS: real_mod_filepath {real_mod_filepath}\n')
         return
 
@@ -567,30 +558,6 @@ end"""
 def post_build_and_install_loop_hook(ecs_with_res):
     """Hook to run after all easyconfigs have been built and installed"""
 
-    logger = fancylogger.getLogger()
-    fancylogger.logToScreen(True, stdout=True)
-    fancylogger.setLogLevelInfo()
-
-    # by default we do not run the lmod cache
-    # only vsc10001 sets BUILD_TOOLS_RUN_LMOD_CACHE (via submit_build.py) to enable it
-    build_tools_lmod = os.getenv('BUILD_TOOLS_RUN_LMOD_CACHE', '0').lower() not in ('0', 'false', 'off', 'no')
-    builds_succeeded = any(x[1]['success'] for x in ecs_with_res)
-    slurm_job_partition = os.getenv('SLURM_JOB_PARTITION')
-
-    if all([build_tools_lmod, builds_succeeded, slurm_job_partition]):
-        # logger.info('[post_build_and_install_loop hook] Submitting Lmod cache job '
-        #             'for partition %s', slurm_job_partition)
-        # # submit Lmod cache job
-        # # set cluster=False to avoid loading cluster module in job
-        # submit_lmod_cache_job(slurm_job_partition, cluster=False)
-        sys.stderr.write('BUILD_TOOLS: submit_lmod_cache_job\n')
-
-    else:
-        log_msg = ['[post_build_and_install_loop hook] Not running Lmod cache job:']
-        if not build_tools_lmod:
-            log_msg.append('(BUILD_TOOLS_RUN_LMOD_CACHE not set)')
-        if not builds_succeeded:
-            log_msg.append('(no builds succeeded)')
-        if not slurm_job_partition:
-            log_msg.append('(SLURM_JOB_PARTITION not set)')
-        logger.info(' '.join(log_msg))
+    if any(x[1]['success'] for x in ecs_with_res):
+        # write message to stderr indicating that some builds succeeded, which may trigger an Lmod cache job
+        sys.stderr.write('BUILD_TOOLS: builds_succeeded\n')
