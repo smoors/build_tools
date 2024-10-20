@@ -30,6 +30,8 @@ BUILD_JOB = """#!/bin/bash -l
 #SBATCH --gpus-per-node=${gpus}
 #SBATCH --partition=${partition}
 
+source /scratch/brussel/vo/000/bvo00005/shared/sam/testsam/test_submit_build/venv_build_tools_py39/bin/activate
+
 if [ -z $$PREFIX_EB ]; then
   echo 'PREFIX_EB is not set!'
   exit 1
@@ -54,8 +56,33 @@ if [ "${target_arch}" != "$$local_arch" ]; then
     export MODULEPATH=$${MODULEPATH//$$local_arch/${target_arch}}
 fi
 
+EB='eb'
+
+if [ "${bwrap}" == 1 ]; then
+    output=$$(./get_module_from_easyconfig.py ${easyconfig})
+    while read -r key value; do
+        [ "$$key" == "==" ] && continue
+        [ "$$key" == "modname" ] && modname="$$value"
+        [ "$$key" == "modversion" ] && modversion="$$value"
+    done <<< "$$output"
+    appsmnt="/vscmnt/brussel_pixiu_apps/_apps_brussel"
+    softbwrap="/apps/brussel/bwrap/$$VSC_OS_LOCAL/${target_arch}/software/$$modname"
+    softreal="$$appsmnt/$$VSC_OS_LOCAL/${target_arch}/software/$$modname"
+    modbwrap="/apps/brussel/$$VSC_OS_LOCAL/${target_arch}/${subdir_modules_bwrap}/all/$$modname"
+    mkdir -p "$$softbwrap"
+    mkdir -p "$$modbwrap"
+    bwrap_cmd=(
+        bwrap
+        --bind / /
+        --bind "$$softbwrap" "$$softreal"
+        --dev /dev
+        --bind /dev/log /dev/log
+    )
+    EB="$${bwrap_cmd[*]} $$EB"
+fi
+
 eb_stderr=$$(mktemp).eb_stderr
-${pre_eb_options} eb ${eb_options} 2>"$$eb_stderr"
+$$EB ${easyconfig} ${eb_options} 2>"$$eb_stderr"
 
 ec=$$?
 cat "$$eb_stderr" >/dev/stderr
@@ -67,7 +94,22 @@ if [ $$ec -ne 0 ]; then
     exit $$ec
 fi
 
-${postinstall}
+if [ "${bwrap}" == 1 ]; then
+    dest_modfile=$$(grep "^BUILD_TOOLS: real_mod_filepath" "$$eb_stderr" | cut -d " " -f 3)
+    echo "destination module file: $$dest_modfile"
+    test -n "$$dest_modfile" || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
+    set -x
+    source_installdir="$$softbwrap/$$modversion/"
+    dest_installdir="$$softreal/$$modversion/"
+    source_modfile="$$modbwrap/$$modversion.lua"
+    set +x
+    test -d "$$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
+    test -n "$$(ls -A $$source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
+    test -s "$$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
+    rsync -a --link-dest="$$source_installdir" "$$source_installdir" "$$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
+    rsync -a --link-dest="$$source_modfile" "$$source_modfile" "$$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
+    rm -rf "$$source_installdir" "$$source_modfile"
+fi
 
 builds_succeeded=$$(grep "^BUILD_TOOLS: builds_succeeded" "$$eb_stderr")
 if [[ "${lmod_cache}" == 1 && -n "$${builds_succeeded}" ]];then

@@ -34,7 +34,6 @@ from easybuild.tools.hooks import SANITYCHECK_STEP
 
 from build_tools.clusters import ARCHS
 from build_tools.ib_modules import IB_MODULE_SOFTWARE, IB_MODULE_SUFFIX, IB_OPT_MARK
-from build_tools.bwraptools import SUBDIR_MODULES_BWRAP
 
 # permission groups for licensed software
 SOFTWARE_GROUPS = {
@@ -67,6 +66,8 @@ LOCAL_ARCH_FULL = f'{LOCAL_ARCH}{LOCAL_ARCH_SUFFIX}'
 VALID_TCGENS = ['2022a', '2023a']
 VALID_MODULES_SUBDIRS = VALID_TCGENS + ['system']
 VALID_TCS = ['foss', 'intel', 'gomkl', 'gimkl', 'gimpi']
+
+SUBDIR_MODULES_BWRAP = '.modules_bwrap'
 
 
 def get_tc_versions():

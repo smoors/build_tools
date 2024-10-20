@@ -73,6 +73,9 @@ def test_mk_job_name(test_name):
             'tmp': '/tmp/eb-test-build',
             'postinstall': '',
             'lmod_cache': '1',
+            'bwrap': '0',
+            'easyconfig': 'zlib-1.2.11.eb',
+            'subdir_modules_bwrap': '.modules_bwrap',
         }),
         ('build_job_02.sh', {
             'job_name': 'test-job-gpu',
@@ -83,13 +86,15 @@ def test_mk_job_name(test_name):
             'target_arch': 'zen2-ib',
             'partition': 'ampere_gpu',
             'langcode': 'C',
-            'eb_options': ' --cuda-compute-capabilities=8.0',
-            'pre_eb_options': 'bwrap',
+            'eb_options': '--cuda-compute-capabilities=8.0',
             'eb_buildpath': '/tmp/eb-test-build',
             'eb_installpath': '/apps/brussel/${VSC_OS_LOCAL}/zen2-ib',
             'tmp': '/tmp/eb-test-build',
             'postinstall': 'rsync src dest',
-            'lmod_cache': '',
+            'lmod_cache': '0',
+            'bwrap': 1,
+            'easyconfig': 'zlib-1.2.11.eb',
+            'subdir_modules_bwrap': '.modules_bwrap',
         }),
     ]
 )
