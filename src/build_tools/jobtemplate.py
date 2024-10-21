@@ -30,8 +30,6 @@ BUILD_JOB = """#!/bin/bash -l
 #SBATCH --gpus-per-node=${gpus}
 #SBATCH --partition=${partition}
 
-source /scratch/brussel/vo/000/bvo00005/shared/sam/testsam/test_submit_build/venv_build_tools_py39/bin/activate
-
 test -n "$$PREFIX_EB" || { echo "ERROR: environment variable PREFIX_EB not set"; exit 1; }
 
 # set environment
