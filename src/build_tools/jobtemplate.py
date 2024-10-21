@@ -32,10 +32,7 @@ BUILD_JOB = """#!/bin/bash -l
 
 source /scratch/brussel/vo/000/bvo00005/shared/sam/testsam/test_submit_build/venv_build_tools_py39/bin/activate
 
-if [ -z $$PREFIX_EB ]; then
-  echo 'PREFIX_EB is not set!'
-  exit 1
-fi
+test -n "$$PREFIX_EB" || { echo "ERROR: environment variable PREFIX_EB not set"; exit 1 }
 
 # set environment
 export BUILD_TOOLS_LOAD_DUMMY_MODULES=1
@@ -105,8 +102,8 @@ if [ "${bwrap}" == 1 ]; then
     source_installdir="$$softbwrap/$$modversion/"
     dest_installdir="$$softreal/$$modversion/"
     source_modfile="$$modbwrap/$$modversion.lua"
-    echo "source/destination install dir: $$source_installdir $$dest_installdir"
-    echo "source/destination module file: $$source_modfile $$dest_modfile"
+    echo "BUILD_TOOLS: source/destination install dir: $$source_installdir $$dest_installdir"
+    echo "BUILD_TOOLS: source/destination module file: $$source_modfile $$dest_modfile"
     test -d "$$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
     test -n "$$(ls -A $$source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
     test -s "$$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
