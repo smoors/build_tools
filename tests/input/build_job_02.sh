@@ -8,10 +8,7 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --partition=ampere_gpu
 
-if [ -z $PREFIX_EB ]; then
-  echo 'PREFIX_EB is not set!'
-  exit 1
-fi
+test -n "$PREFIX_EB" || { echo "ERROR: environment variable PREFIX_EB not set"; exit 1; }
 
 # set environment
 export BUILD_TOOLS_LOAD_DUMMY_MODULES=1
@@ -35,12 +32,16 @@ fi
 EB='eb'
 
 if [ "1" == 1 ]; then
-    output=$(./get_module_from_easyconfig.py zlib-1.2.11.eb)
+    echo "BUILD_TOOLS: installing with bwrap"
+    output=$(get_module_from_easyconfig.py zlib-1.2.11.eb) || { echo "ERROR: get_module_from_easyconfig.py failed"; exit 1; }
+    echo "BUILD_TOOLS: get_module_from_easyconfig.py output: $output"
     while read -r key value; do
         [ "$key" == "==" ] && continue
         [ "$key" == "modname" ] && modname="$value"
         [ "$key" == "modversion" ] && modversion="$value"
     done <<< "$output"
+    echo "BUILD_TOOLS: modname $modname modversion $modversion"
+    [[ -n $modname && -n $modversion ]] || { echo "ERROR: failed to get modname and/or modversion"; exit 1; }
     appsmnt="/vscmnt/brussel_pixiu_apps/_apps_brussel"
     softbwrap="/apps/brussel/bwrap/$VSC_OS_LOCAL/zen2-ib/software/$modname"
     softreal="$appsmnt/$VSC_OS_LOCAL/zen2-ib/software/$modname"
@@ -55,15 +56,17 @@ if [ "1" == 1 ]; then
         --bind /dev/log /dev/log
     )
     EB="${bwrap_cmd[*]} $EB"
+    echo "BUILD_TOOLS: bwrap eb command: $EB"
 fi
 
 eb_stderr=$(mktemp).eb_stderr
 $EB zlib-1.2.11.eb --cuda-compute-capabilities=8.0 2>"$eb_stderr"
 
 ec=$?
-cat "$eb_stderr" >/dev/stderr
+cat "$eb_stderr" >>/dev/stderr
 
 if [ $ec -ne 0 ]; then
+    echo "BUILD_TOOLS: EasyBuild exited with non-zero exit code ($ec)" >>/dev/stderr
     if [ -n "$SLURM_JOB_ID" ]; then
         rm -rf /tmp/eb-test-build
     fi
@@ -71,20 +74,19 @@ if [ $ec -ne 0 ]; then
 fi
 
 if [ "1" == 1 ]; then
-    dest_modfile=$(grep "^BUILD_TOOLS: real_mod_filepath" "$eb_stderr" | cut -d " " -f 3)
-    echo "destination module file: $dest_modfile"
-    test -n "$dest_modfile" || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
-    set -x
+    dest_modfile=$(grep "^BUILD_TOOLS: real_mod_filepath" "$eb_stderr" | cut -d " " -f 3) || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
     source_installdir="$softbwrap/$modversion/"
     dest_installdir="$softreal/$modversion/"
     source_modfile="$modbwrap/$modversion.lua"
-    set +x
+    echo "BUILD_TOOLS: source/destination install dir: $source_installdir $dest_installdir"
+    echo "BUILD_TOOLS: source/destination module file: $source_modfile $dest_modfile"
     test -d "$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
     test -n "$(ls -A $source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
     test -s "$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
     rsync -a --link-dest="$source_installdir" "$source_installdir" "$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
-    rsync -a --link-dest="$source_modfile" "$source_modfile" "$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
+    rsync -a --link-dest="$modbwrap" "$source_modfile" "$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
     rm -rf "$source_installdir" "$source_modfile"
+    echo "BUILD_TOOLS: installation moved from bwrap to real location"
 fi
 
 builds_succeeded=$(grep "^BUILD_TOOLS: builds_succeeded" "$eb_stderr")
@@ -104,6 +106,6 @@ if [[ "0" == 1 && -n "${builds_succeeded}" ]];then
         --architecture zen2-ib
         --module-basedir /apps/brussel/$VSC_OS_LOCAL
     )
-    echo "submitting Lmod cache update job on partition ampere_gpu for architecture zen2-ib"
+    echo "BUILD_TOOLS: submitting Lmod cache update job on partition ampere_gpu for architecture zen2-ib"
     sbatch "${job_options[@]}" --wrap "${cmd[*]}"
 fi

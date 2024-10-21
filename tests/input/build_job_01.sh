@@ -8,7 +8,7 @@
 #SBATCH --gpus-per-node=0
 #SBATCH --partition=skylake_mpi
 
-test -n "$PREFIX_EB" || { echo "ERROR: environment variable PREFIX_EB not set"; exit 1 }
+test -n "$PREFIX_EB" || { echo "ERROR: environment variable PREFIX_EB not set"; exit 1; }
 
 # set environment
 export BUILD_TOOLS_LOAD_DUMMY_MODULES=1
