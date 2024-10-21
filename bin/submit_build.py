@@ -177,6 +177,8 @@ def main():
     if opts.options.pwd_robot_append:
         ebconf['robot-paths'] += ':' + os.getcwd()
 
+    job['robot_paths'] = ebconf['robot-paths']
+
     # Add extra footer
     if opts.options.extra_mod_footer:
         # if explicitly requested
