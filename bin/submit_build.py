@@ -215,7 +215,7 @@ def main():
 
     bwrap = opts.options.bwrap
     if bwrap:
-        job['brwap'] = 1
+        job['bwrap'] = 1
 
     if opts.options.skip_lmod_cache:
         job['lmod_cache'] = '0'

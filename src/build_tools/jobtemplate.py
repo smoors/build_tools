@@ -59,6 +59,7 @@ fi
 EB='eb'
 
 if [ "${bwrap}" == 1 ]; then
+    echo "BUILD_TOOLS: installing with bwrap"
     output=$$(./get_module_from_easyconfig.py ${easyconfig})
     while read -r key value; do
         [ "$$key" == "==" ] && continue
@@ -88,6 +89,7 @@ ec=$$?
 cat "$$eb_stderr" >/dev/stderr
 
 if [ $$ec -ne 0 ]; then
+    echo "BUILD_TOOLS: EasyBuild exited with non-zero exit code ($$ec)" >/dev/stderr
     if [ -n "$$SLURM_JOB_ID" ]; then
         rm -rf ${eb_buildpath}
     fi
@@ -109,6 +111,7 @@ if [ "${bwrap}" == 1 ]; then
     rsync -a --link-dest="$$source_installdir" "$$source_installdir" "$$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
     rsync -a --link-dest="$$source_modfile" "$$source_modfile" "$$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
     rm -rf "$$source_installdir" "$$source_modfile"
+    echo "BUILD_TOOLS: installation moved from bwrap to real location"
 fi
 
 builds_succeeded=$$(grep "^BUILD_TOOLS: builds_succeeded" "$$eb_stderr")
@@ -128,7 +131,7 @@ if [[ "${lmod_cache}" == 1 && -n "$${builds_succeeded}" ]];then
         --architecture ${target_arch}
         --module-basedir /apps/brussel/$$VSC_OS_LOCAL
     )
-    echo "submitting Lmod cache update job on partition ${partition} for architecture ${target_arch}"
+    echo "BUILD_TOOLS: submitting Lmod cache update job on partition ${partition} for architecture ${target_arch}"
     sbatch "$${job_options[@]}" --wrap "$${cmd[*]}"
 fi
 
