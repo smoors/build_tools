@@ -60,12 +60,15 @@ EB='eb'
 
 if [ "${bwrap}" == 1 ]; then
     echo "BUILD_TOOLS: installing with bwrap"
-    output=$$(./get_module_from_easyconfig.py ${easyconfig})
+    output=$$(get_module_from_easyconfig.py ${easyconfig}) || { echo "ERROR: get_module_from_easyconfig.py failed"; exit 1; }
+    echo "BUILD_TOOLS: get_module_from_easyconfig.py output: $$output"
     while read -r key value; do
         [ "$$key" == "==" ] && continue
         [ "$$key" == "modname" ] && modname="$$value"
         [ "$$key" == "modversion" ] && modversion="$$value"
     done <<< "$$output"
+    echo "BUILD_TOOLS: modname $$modname modversion $$modversion"
+    [[ -n $$modname && -n $$modversion ]] || { echo "ERROR: failed to get modname and/or modversion"; exit 1; }
     appsmnt="/vscmnt/brussel_pixiu_apps/_apps_brussel"
     softbwrap="/apps/brussel/bwrap/$$VSC_OS_LOCAL/${target_arch}/software/$$modname"
     softreal="$$appsmnt/$$VSC_OS_LOCAL/${target_arch}/software/$$modname"
@@ -80,16 +83,17 @@ if [ "${bwrap}" == 1 ]; then
         --bind /dev/log /dev/log
     )
     EB="$${bwrap_cmd[*]} $$EB"
+    echo "BUILD_TOOLS: bwrap eb command: $$EB"
 fi
 
 eb_stderr=$$(mktemp).eb_stderr
 $$EB ${easyconfig} ${eb_options} 2>"$$eb_stderr"
 
 ec=$$?
-cat "$$eb_stderr" >/dev/stderr
+cat "$$eb_stderr" >>/dev/stderr
 
 if [ $$ec -ne 0 ]; then
-    echo "BUILD_TOOLS: EasyBuild exited with non-zero exit code ($$ec)" >/dev/stderr
+    echo "BUILD_TOOLS: EasyBuild exited with non-zero exit code ($$ec)" >>/dev/stderr
     if [ -n "$$SLURM_JOB_ID" ]; then
         rm -rf ${eb_buildpath}
     fi
@@ -97,19 +101,17 @@ if [ $$ec -ne 0 ]; then
 fi
 
 if [ "${bwrap}" == 1 ]; then
-    dest_modfile=$$(grep "^BUILD_TOOLS: real_mod_filepath" "$$eb_stderr" | cut -d " " -f 3)
-    echo "destination module file: $$dest_modfile"
-    test -n "$$dest_modfile" || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
-    set -x
+    dest_modfile=$$(grep "^BUILD_TOOLS: real_mod_filepath" "$$eb_stderr" | cut -d " " -f 3) || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
     source_installdir="$$softbwrap/$$modversion/"
     dest_installdir="$$softreal/$$modversion/"
     source_modfile="$$modbwrap/$$modversion.lua"
-    set +x
+    echo "source/destination install dir: $$source_installdir $$dest_installdir"
+    echo "source/destination module file: $$source_modfile $$dest_modfile"
     test -d "$$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
     test -n "$$(ls -A $$source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
     test -s "$$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
     rsync -a --link-dest="$$source_installdir" "$$source_installdir" "$$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
-    rsync -a --link-dest="$$source_modfile" "$$source_modfile" "$$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
+    rsync -a --link-dest="$$modbwrap" "$$source_modfile" "$$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
     rm -rf "$$source_installdir" "$$source_modfile"
     echo "BUILD_TOOLS: installation moved from bwrap to real location"
 fi
