@@ -247,7 +247,7 @@ def main():
             '--debug',
             '--module-extensions',
             '--zip-logs=bzip2',
-            '--module-depends-on'
+            '--module-depends-on',
             f'--subdir-modules={job_options["subdir_modules"]}',
         ]
 
