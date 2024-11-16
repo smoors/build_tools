@@ -34,7 +34,7 @@ EB='eb'
 if [ "0" == 1 ]; then
     echo "BUILD_TOOLS: installing with bwrap"
     output=$(EASYBUILD_ROBOT_PATHS=/some/path EASYBUILD_IGNORE_INDEX=1 ec2ml.py zlib-1.2.11.eb) || { echo "ERROR: ec2ml.py failed"; exit 1; }
-    echo "BUILD_TOOLS: get_module_from_easyconfig.py output: $output"
+    echo "BUILD_TOOLS: ec2ml.py zlib-1.2.11.eb output: $output"
     while read -r key value; do
         [ "$key" == "full_mod_name" ] && { modname=${value%/*}; modversion=${value#*/}; break; }
     done <<< "$output"
