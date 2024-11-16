@@ -66,9 +66,7 @@ def main():
         'extra_mod_footer': None,
         'langcode': 'en_US.utf8',
         'lmod_cache': '1',
-        # choose subdir_modules value for which the module path already exists,
-        # to avoid that EB creates the path before subdir_modules gets updated in the hooks
-        'subdir_modules': os.path.join('modules', 'system'),
+        'subdir_modules_bwrap': SUBDIR_MODULES_BWRAP,
         'target_arch': None,
         'tmp': '/dev/shm',
     }
@@ -219,7 +217,6 @@ def main():
     bwrap = opts.options.bwrap
     if bwrap:
         job['bwrap'] = 1
-        job['subdir_modules'] = SUBDIR_MODULES_BWRAP
 
     if opts.options.skip_lmod_cache:
         job['lmod_cache'] = '0'
@@ -248,14 +245,21 @@ def main():
             '--module-extensions',
             '--zip-logs=bzip2',
             '--module-depends-on',
-            f'--subdir-modules={job_options["subdir_modules"]}',
         ]
 
         if bwrap:
-            eb_options.append('--rebuild')
+            eb_options.extend([
+                '--rebuild',
+                f'--subdir-modules={job_options["subdir_modules_bwrap"]}',
+            ])
         else:
-            # robot is not supported with bwrap
-            eb_options.append('--robot')
+            eb_options.extend([
+                # robot is not supported with bwrap
+                '--robot',
+                # set subdir_modules to an initial value corresponding to a module path that already exists,
+                # to avoid that EB creates a nonexisting path before subdir_modules gets updated in the hooks
+                '--subdir-modules=modules/system',
+            ])
 
         # cross-compilation
         if job_options['target_arch'] != host_arch:

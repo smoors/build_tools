@@ -66,7 +66,7 @@ if [ "${bwrap}" == 1 ]; then
     appsmnt="/vscmnt/brussel_pixiu_apps/_apps_brussel"
     softbwrap="/apps/brussel/bwrap/$$VSC_OS_LOCAL/${target_arch}/software/$$modname"
     softreal="$$appsmnt/$$VSC_OS_LOCAL/${target_arch}/software/$$modname"
-    modbwrap="/apps/brussel/$$VSC_OS_LOCAL/${target_arch}/${subdir_modules}/all/$$modname"
+    modbwrap="/apps/brussel/$$VSC_OS_LOCAL/${target_arch}/${subdir_modules_bwrap}/all/$$modname"
     mkdir -p "$$softbwrap"
     mkdir -p "$$modbwrap"
     bwrap_cmd=(

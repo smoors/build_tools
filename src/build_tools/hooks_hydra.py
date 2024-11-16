@@ -162,7 +162,7 @@ def update_module_install_paths(self):
         sys.stderr.write(f'BUILD_TOOLS: real_mod_filepath {real_mod_filepath}\n')
         return
 
-    # update self.installdir_mod and self.mod_filepath, which are defined before the fetch step
+    # update self.installdir_mod and self.mod_filepath to ensure modules are installed correctly
     self.installdir_mod = re.sub(rf'/{subdir_modules}/{suffix}$', f'/{real_subdir_modules}/{suffix}',
                                  self.installdir_mod)
     self.log.info('[pre-fetch hook] Updated installdir_mod to %s', self.installdir_mod)
