@@ -56,7 +56,7 @@ EB='eb'
 if [ "${bwrap}" == 1 ]; then
     echo "BUILD_TOOLS: installing with bwrap"
     output=$$(EASYBUILD_ROBOT_PATHS=${robot_paths} EASYBUILD_IGNORE_INDEX=1 ec2ml.py ${easyconfig}) || { echo "ERROR: ec2ml.py failed"; exit 1; }
-    echo "BUILD_TOOLS: get_module_from_easyconfig.py output: $$output"
+    echo "BUILD_TOOLS: ec2ml.py ${easyconfig} output: $$output"
     while read -r key value; do
         [ "$$key" == "full_mod_name" ] && { modname=$${value%/*}; modversion=$${value#*/}; break; }
     done <<< "$$output"
@@ -95,6 +95,7 @@ fi
 
 if [ "${bwrap}" == 1 ]; then
     dest_modfile=$$(grep "^BUILD_TOOLS: real_mod_filepath" "$$eb_stderr" | cut -d " " -f 3) || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
+    dest_moddir=$$(dirname "$$dest_modefile")
     source_installdir="$$softbwrap/$$modversion/"
     dest_installdir="$$softreal/$$modversion/"
     source_modfile="$$modbwrap/$$modversion.lua"
@@ -103,6 +104,7 @@ if [ "${bwrap}" == 1 ]; then
     test -d "$$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
     test -n "$$(ls -A $$source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
     test -s "$$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
+    mkdir -p "$$dest_moddir" "$$dest_installdir"
     rsync -a --link-dest="$$source_installdir" "$$source_installdir" "$$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
     rsync -a --link-dest="$$modbwrap" "$$source_modfile" "$$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
     rm -rf "$$source_installdir" "$$source_modfile"
