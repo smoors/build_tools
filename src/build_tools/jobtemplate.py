@@ -20,7 +20,8 @@ Job template to submit build jobs
 
 from string import Template
 
-BUILD_JOB = """#!/bin/bash -l
+BUILD_JOB = """\
+#!/bin/bash -l
 #SBATCH --job-name=${job_name}
 #SBATCH --output="%x-%j.out"
 #SBATCH --error="%x-%j.err"
@@ -95,7 +96,7 @@ fi
 
 if [ "${bwrap}" == 1 ]; then
     dest_modfile=$$(grep "^BUILD_TOOLS: real_mod_filepath" "$$eb_stderr" | cut -d " " -f 3) || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
-    dest_moddir=$$(dirname "$$dest_modefile")
+    dest_moddir=$$(dirname "$$dest_modfile")
     source_installdir="$$softbwrap/$$modversion/"
     dest_installdir="$$softreal/$$modversion/"
     source_modfile="$$modbwrap/$$modversion.lua"
