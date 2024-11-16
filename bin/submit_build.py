@@ -66,7 +66,9 @@ def main():
         'extra_mod_footer': None,
         'langcode': 'en_US.utf8',
         'lmod_cache': '1',
-        'subdir_modules_bwrap': SUBDIR_MODULES_BWRAP,
+        # choose subdir_modules value for which the module path already exists,
+        # to avoid that EB creates the path before subdir_modules gets updated in the hooks
+        'subdir_modules': os.path.join('modules', 'system'),
         'target_arch': None,
         'tmp': '/dev/shm',
     }
@@ -217,6 +219,7 @@ def main():
     bwrap = opts.options.bwrap
     if bwrap:
         job['bwrap'] = 1
+        job['subdir_modules'] = SUBDIR_MODULES_BWRAP
 
     if opts.options.skip_lmod_cache:
         job['lmod_cache'] = '0'
@@ -239,10 +242,17 @@ def main():
         ebconf['buildpath'] = os.path.join(job['tmp'], 'eb-submit-build')
 
         # common EB command line options
-        eb_options = ['--logtostdout', '--debug', '--module-extensions', '--zip-logs=bzip2', '--module-depends-on']
+        eb_options = [
+            '--logtostdout',
+            '--debug',
+            '--module-extensions',
+            '--zip-logs=bzip2',
+            '--module-depends-on'
+            f'--subdir-modules={job_options["subdir_modules"]}',
+        ]
 
         if bwrap:
-            eb_options.extend([' --rebuild', f'--subdir-modules={job_options["subdir_modules_bwrap"]}'])
+            eb_options.append('--rebuild')
         else:
             # robot is not supported with bwrap
             eb_options.append('--robot')
