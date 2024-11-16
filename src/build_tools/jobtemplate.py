@@ -96,7 +96,6 @@ fi
 
 if [ "${bwrap}" == 1 ]; then
     dest_modfile=$$(grep "^BUILD_TOOLS: real_mod_filepath" "$$eb_stderr" | cut -d " " -f 3) || { echo "ERROR: failed to obtain destination module file path"; exit 1; }
-    dest_moddir=$$(dirname "$$dest_modfile")
     source_installdir="$$softbwrap/$$modversion/"
     dest_installdir="$$softreal/$$modversion/"
     source_modfile="$$modbwrap/$$modversion.lua"
@@ -105,7 +104,7 @@ if [ "${bwrap}" == 1 ]; then
     test -d "$$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
     test -n "$$(ls -A $$source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
     test -s "$$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
-    mkdir -p "$$dest_moddir" "$$dest_installdir"
+    mkdir -p $$(dirname "$$dest_modfile")
     rsync -a --link-dest="$$source_installdir" "$$source_installdir" "$$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
     rsync -a --link-dest="$$modbwrap" "$$source_modfile" "$$dest_modfile" || { echo "ERROR: failed to copy module file"; exit 1; }
     rm -rf "$$source_installdir" "$$source_modfile"
