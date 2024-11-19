@@ -67,6 +67,29 @@ VALID_TCGENS = ['2022a', '2023a']
 VALID_MODULES_SUBDIRS = VALID_TCGENS + ['system']
 VALID_TCS = ['foss', 'intel', 'gomkl', 'gimkl', 'gimpi']
 
+TC_VERSIONS = {
+    '2022a': [{'name': 'GCCcore', 'version': '11.3.0'},
+              {'name': 'GCC', 'version': '11.3.0'},
+              {'name': 'gfbf', 'version': '2022a'},
+              {'name': 'gompi', 'version': '2022a'},
+              {'name': 'foss', 'version': '2022a'},
+              {'name': 'intel-compilers', 'version': '2022.1.0'},
+              {'name': 'iimkl', 'version': '2022a'},
+              {'name': 'iimpi', 'version': '2022a'},
+              {'name': 'intel', 'version': '2022a'},
+              {'name': 'gomkl', 'version': '2022a'}],
+    '2023a': [{'name': 'GCCcore', 'version': '12.3.0'},
+              {'name': 'GCC', 'version': '12.3.0'},
+              {'name': 'gfbf', 'version': '2023a'},
+              {'name': 'gompi', 'version': '2023a'},
+              {'name': 'foss', 'version': '2023a'},
+              {'name': 'intel-compilers', 'version': '2023.1.0'},
+              {'name': 'iimkl', 'version': '2023a'},
+              {'name': 'iimpi', 'version': '2023a'},
+              {'name': 'intel', 'version': '2023a'},
+              {'name': 'gomkl', 'version': '2023a'}],
+}
+
 SUBDIR_MODULES_BWRAP = '.modules_bwrap'
 SUFFIX_MODULES_PATH = 'collection'
 # SUFFIX_MODULES_BWRAP = 'bwrap'
@@ -88,19 +111,19 @@ SUFFIX_MODULES_PATH = 'collection'
 #     return orig_value
 
 
-def get_tc_versions():
-    " build dict of valid (sub)toolchain-version combinations per valid generation "
-    tc_versions = {}
-    for toolcgen in VALID_TCGENS:
-        tc_versions[toolcgen] = []
-        for toolc in VALID_TCS:
-            try:
-                tc_versions[toolcgen].extend(get_toolchain_hierarchy({'name': toolc, 'version': toolcgen}))
-            except EasyBuildError:
-                # skip if no easyconfig found for toolchain-version
-                pass
-
-    return tc_versions
+# def get_tc_versions():
+#     " build dict of valid (sub)toolchain-version combinations per valid generation "
+#     tc_versions = {}
+#     for toolcgen in VALID_TCGENS:
+#         tc_versions[toolcgen] = []
+#         for toolc in VALID_TCS:
+#             try:
+#                 tc_versions[toolcgen].extend(get_toolchain_hierarchy({'name': toolc, 'version': toolcgen}))
+#             except EasyBuildError:
+#                 # skip if no easyconfig found for toolchain-version
+#                 pass
+# 
+#     return tc_versions
 
 
 def calc_tc_gen(name, version, tcname, tcversion, easyblock):
@@ -112,7 +135,8 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
     toolchain = {'name': tcname, 'version': tcversion}
     software = [name, version, tcname, tcversion, easyblock]
 
-    tc_versions = get_tc_versions()
+    # tc_versions = get_tc_versions()
+    tc_versions = TC_VERSIONS
 
     # (software with) valid (sub)toolchain-version combination
     for toolcgen in VALID_TCGENS:
@@ -136,7 +160,7 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
     return False, log_msg
 
 
-def update_moduleclass(ec):
+def update_moduleclass(ec, suffix):
     "update the moduleclass of an easyconfig to <tc_gen>/all"
     tc_gen, log_msg = calc_tc_gen(
         ec.name, ec.version, ec.toolchain.name, ec.toolchain.version, ec.easyblock)
@@ -146,10 +170,9 @@ def update_moduleclass(ec):
 
     ec.log.info("[parse hook] " + log_msg)
 
-    suffix = build_option('suffix_modules_path')
-    ec.moduleclass = os.path.join(tc_gen, suffix)
+    ec['moduleclass'] = os.path.join(tc_gen, suffix)
 
-    ec.log.info("[parse hook] updated moduleclass for %s to %s", ec.easyconfig, ec.moduleclcass)
+    ec.log.info("[parse hook] updated moduleclass for %s to %s", os.path.basename(ec['path']), ec['moduleclcass'])
 
 
 # def update_module_install_paths(self):
@@ -249,7 +272,9 @@ def release_fetch_lock(self):
 def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
     """Alter build options and easyconfig parameters"""
 
-    update_moduleclass(ec)
+    suffix = build_option('suffix_modules_path')
+    if not ec['moduleclass'].endswith(f'/{suffix}'):
+        update_moduleclass(ec, suffix)
 
     # disable robot for bwrap
     # must be done in a hook in case robot is set in an easystack, which takes precedence over cmd line options
