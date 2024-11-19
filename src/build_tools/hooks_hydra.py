@@ -92,6 +92,7 @@ TC_VERSIONS = {
 
 SUBDIR_MODULES_BWRAP = '.modules_bwrap'
 SUFFIX_MODULES_PATH = 'collection'
+SUFFIX_MODULES_SYMLINK = 'all'
 # SUFFIX_MODULES_BWRAP = 'bwrap'
 
 
@@ -160,7 +161,7 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
     return False, log_msg
 
 
-def update_moduleclass(ec, suffix):
+def update_moduleclass(ec):
     "update the moduleclass of an easyconfig to <tc_gen>/all"
     tc_gen, log_msg = calc_tc_gen(
         ec.name, ec.version, ec.toolchain.name, ec.toolchain.version, ec.easyblock)
@@ -170,9 +171,9 @@ def update_moduleclass(ec, suffix):
 
     ec.log.info("[parse hook] " + log_msg)
 
-    ec['moduleclass'] = os.path.join(tc_gen, suffix)
+    ec['moduleclass'] = os.path.join(tc_gen, SUFFIX_MODULES_SYMLINK)
 
-    ec.log.info("[parse hook] updated moduleclass for %s to %s", os.path.basename(ec['path']), ec['moduleclcass'])
+    ec.log.info("[parse hook] updated moduleclass for %s to %s", os.path.basename(ec['path']), ec['moduleclass'])
 
 
 # def update_module_install_paths(self):
@@ -273,7 +274,7 @@ def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
     """Alter build options and easyconfig parameters"""
 
     suffix = build_option('suffix_modules_path')
-    if not ec['moduleclass'].endswith(f'/{suffix}'):
+    if not ec['moduleclass'].endswith(f'/{SUFFIX_MODULES_SYMLINK}'):
         update_moduleclass(ec, suffix)
 
     # disable robot for bwrap
