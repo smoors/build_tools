@@ -273,9 +273,8 @@ def release_fetch_lock(self):
 def parse_hook(ec, *args, **kwargs):  # pylint: disable=unused-argument
     """Alter build options and easyconfig parameters"""
 
-    suffix = build_option('suffix_modules_path')
     if not ec['moduleclass'].endswith(f'/{SUFFIX_MODULES_SYMLINK}'):
-        update_moduleclass(ec, suffix)
+        update_moduleclass(ec)
 
     # disable robot for bwrap
     # must be done in a hook in case robot is set in an easystack, which takes precedence over cmd line options
