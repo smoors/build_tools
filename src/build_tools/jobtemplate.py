@@ -99,8 +99,8 @@ if [ $$ec -ne 0 ]; then
 fi
 
 if [ "${bwrap}" == 1 ]; then
-    source_installdir="$$softbwrap/$$modversion/"  # trailing slash required
-    dest_installdir="$$softreal/$$modversion/"  # trailing slash required
+    source_installdir="$$softbwrap/$$modversion/"
+    dest_installdir="$$softreal/$$modversion/"
     installbase="/apps/brussel/$$VSC_OS_LOCAL/${target_arch}"
     source_modfile="$$installbase/$$SUBDIR_MODULES_BWRAP/$$SUFFIX_MODULES_PATH/$$modname/$$modversion.lua"
     source_modsymlink="$$installbase/$$SUBDIR_MODULES_BWRAP/*/$$SUFFIX_MODULES_SYMLINK/$$modname/$$modversion.lua"
@@ -112,14 +112,14 @@ if [ "${bwrap}" == 1 ]; then
     test -d "$$source_installdir" || { echo "ERROR: source install dir does not exist"; exit 1; }
     test -n "$$(ls -A $$source_installdir)" || { echo "ERROR: source install dir is empty"; exit 1; }
     test -s "$$source_modfile" || { echo "ERROR: source module file does not exist or is empty"; exit 1; }
-    test $$(readlink "$$source_modsymlink") == "$$source_modfile" || { echo "ERROR: source module symlink does not link to the correct file"; exit 1; }
+    test $$(readlink $$source_modsymlink) == "$$source_modfile" || { echo "ERROR: source module symlink does not link to correct file"; exit 1; }
     mkdir -p $$(dirname "$$dest_modfile") $$(dirname "$$dest_modsymlink")
     tempfile=$$(mktemp -p /tmp)
     rsync -a --link-dest="$$source_installdir" "$$source_installdir" "$$dest_installdir" || { echo "ERROR: failed to copy install dir"; exit 1; }
     cp -p "$$source_modfile" "$$dest_modfile"
     ln -sf "$$dest_modfile" "$$tempfile"
     mv -f "$$tempfile" "$$dest_modsymlink"
-    test $$(readlink "$$source_modsymlink") == "$$source_modfile" || { echo "ERROR: failed to create symlink to module file"; exit 1; }
+    test $$(readlink "$$dest_modsymlink") == "$$dest_modfile" || { echo "ERROR: failed to create symlink to module file"; exit 1; }
     # commented out for now until we are sure it is ok
     echo dry-run: rm -rf "$$source_installdir" "$$source_modfile" "$$source_modsymlink"
     # rm -rf "$$source_installdir" "$$source_modfile" "$$source_modsymlink"
