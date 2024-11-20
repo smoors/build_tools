@@ -67,64 +67,30 @@ VALID_TCGENS = ['2022a', '2023a']
 VALID_MODULES_SUBDIRS = VALID_TCGENS + ['system']
 VALID_TCS = ['foss', 'intel', 'gomkl', 'gimkl', 'gimpi']
 
-TC_VERSIONS = {
-    '2022a': [{'name': 'GCCcore', 'version': '11.3.0'},
-              {'name': 'GCC', 'version': '11.3.0'},
-              {'name': 'gfbf', 'version': '2022a'},
-              {'name': 'gompi', 'version': '2022a'},
-              {'name': 'foss', 'version': '2022a'},
-              {'name': 'intel-compilers', 'version': '2022.1.0'},
-              {'name': 'iimkl', 'version': '2022a'},
-              {'name': 'iimpi', 'version': '2022a'},
-              {'name': 'intel', 'version': '2022a'},
-              {'name': 'gomkl', 'version': '2022a'}],
-    '2023a': [{'name': 'GCCcore', 'version': '12.3.0'},
-              {'name': 'GCC', 'version': '12.3.0'},
-              {'name': 'gfbf', 'version': '2023a'},
-              {'name': 'gompi', 'version': '2023a'},
-              {'name': 'foss', 'version': '2023a'},
-              {'name': 'intel-compilers', 'version': '2023.1.0'},
-              {'name': 'iimkl', 'version': '2023a'},
-              {'name': 'iimpi', 'version': '2023a'},
-              {'name': 'intel', 'version': '2023a'},
-              {'name': 'gomkl', 'version': '2023a'}],
-}
-
 SUBDIR_MODULES_BWRAP = '.modules_bwrap'
 SUFFIX_MODULES_PATH = 'collection'
 SUFFIX_MODULES_SYMLINK = 'all'
-# SUFFIX_MODULES_BWRAP = 'bwrap'
 
 
-# def update_configuration_variable(key, value, log):
-#     """
-#     Update configuration variable with specified name to given value.
-# 
-#     WARNING: Use this with care, the configuration variables are not expected to be changed during an EasyBuild session!
-#     """
-#     # ConfigurationVariables() is a (singleton) frozen dict, so this is less straightforward that it seems...
-#     variables = ConfigurationVariables()
-#     orig_value = variables._FrozenDict__dict[key]
-#     variables._FrozenDict__dict[key] = value
-#     log.warning("Configuration variable '%s' was updated to: %s", key, ConfigurationVariables()[key])
-# 
-#     # Return original value, so it can be restored later if needed
-#     return orig_value
+def get_tc_versions():
+    " build dict of valid (sub)toolchain-version combinations per valid generation "
 
+    # temporarily disable hooks to avoid infinite recursion when calling get_toolchain_hierarchy()
+    hooks = build_option('hooks')
+    update_build_option('hooks', None)
 
-# def get_tc_versions():
-#     " build dict of valid (sub)toolchain-version combinations per valid generation "
-#     tc_versions = {}
-#     for toolcgen in VALID_TCGENS:
-#         tc_versions[toolcgen] = []
-#         for toolc in VALID_TCS:
-#             try:
-#                 tc_versions[toolcgen].extend(get_toolchain_hierarchy({'name': toolc, 'version': toolcgen}))
-#             except EasyBuildError:
-#                 # skip if no easyconfig found for toolchain-version
-#                 pass
-# 
-#     return tc_versions
+    tc_versions = {}
+    for toolcgen in VALID_TCGENS:
+        tc_versions[toolcgen] = []
+        for toolc in VALID_TCS:
+            try:
+                tc_versions[toolcgen].extend(get_toolchain_hierarchy({'name': toolc, 'version': toolcgen}))
+            except EasyBuildError:
+                # skip if no easyconfig found for toolchain-version
+                pass
+
+    update_build_option('hooks', hooks)
+    return tc_versions
 
 
 def calc_tc_gen(name, version, tcname, tcversion, easyblock):
@@ -136,8 +102,7 @@ def calc_tc_gen(name, version, tcname, tcversion, easyblock):
     toolchain = {'name': tcname, 'version': tcversion}
     software = [name, version, tcname, tcversion, easyblock]
 
-    # tc_versions = get_tc_versions()
-    tc_versions = TC_VERSIONS
+    tc_versions = get_tc_versions()
 
     # (software with) valid (sub)toolchain-version combination
     for toolcgen in VALID_TCGENS:
@@ -173,56 +138,7 @@ def update_moduleclass(ec):
 
     ec['moduleclass'] = os.path.join(tc_gen, SUFFIX_MODULES_SYMLINK)
 
-    ec.log.info("[parse hook] updated moduleclass for %s to %s", os.path.basename(ec['path']), ec['moduleclass'])
-
-
-# def update_module_install_paths(self):
-#     """
-#     update module install paths unless subdir-modules uption is specified "
-#     default subdir_modules config var = 'modules'
-#     here we set it to 'modules/<subdir>', where subdir can be any of VALID_MODULES_SUBDIRS
-#     exception: with bwrap it is set to SUBDIR_MODULES_BWRAP
-#     """
-#     subdir, log_msg = calc_tc_gen(
-#         self.name, self.version, self.toolchain.name, self.toolchain.version, self.cfg.easyblock)
-# 
-#         # write the real module file path to stderr
-#         # after installation, the module file is copied to the real path
-#         sys.stderr.write(f'BUILD_TOOLS: real_mod_filepath {real_mod_filepath}\n')
-#         return
-# 
-#     if not subdir:
-#         raise EasyBuildError("[pre-fetch hook] " + log_msg)
-# 
-#     self.log.info("[pre-fetch hook] " + log_msg)
-# 
-#     suffix = build_option('suffix_modules_path')
-#     real_subdir_modules = os.path.join('modules', subdir)
-#     subdir_modules = ConfigurationVariables()['subdir_modules']
-#     real_mod_filepath = re.sub(rf'/{subdir_modules}/{suffix}/', f'/{real_subdir_modules}/{suffix}/', self.mod_filepath)
-# 
-#     if subdir_modules == SUBDIR_MODULES_BWRAP:
-#         self.log.info("[pre-fetch hook] Installing in new namespace with bwrap")
-# 
-#         # write the real module file path to stderr
-#         # after installation, the module file is copied to the real path
-#         sys.stderr.write(f'BUILD_TOOLS: real_mod_filepath {real_mod_filepath}\n')
-#         return
-# 
-#     # update self.installdir_mod and self.mod_filepath to ensure modules are installed correctly
-#     self.installdir_mod = re.sub(rf'/{subdir_modules}/{suffix}$', f'/{real_subdir_modules}/{suffix}',
-#                                  self.installdir_mod)
-#     self.log.info('[pre-fetch hook] Updated installdir_mod to %s', self.installdir_mod)
-# 
-#     self.mod_filepath = real_mod_filepath
-#     self.log.info('[pre-fetch hook] Updated mod_filepath to %s', self.mod_filepath)
-# 
-#     # create updated installdir_mod in case it doesn't exist yet
-#     mkdir(self.installdir_mod)
-# 
-#     # update subdir_modules configuration variable to ensure moduleclass symlinks are installed correctly
-#     update_configuration_variable('subdir_modules', real_subdir_modules, self.log)
-#     self.log.info('[pre-fetch hook] Updated subdir_modules to %s', real_subdir_modules)
+    ec.log.info("[parse hook] updated moduleclass for %s to %s", os.path.basename(ec.path), ec['moduleclass'])
 
 
 def acquire_fetch_lock(self):
