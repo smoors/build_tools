@@ -119,7 +119,8 @@ def main():
         "pwd-robot-append": ("Append current working dir to robot path", None, "store_true", False, 'p'),
         "skip-lmod-cache": ("Do not run Lmod cache after installation", None, "store_true", False, 's'),
         "tmp": ("Use /tmp as temporary disk instead of /dev/shm", None, "store_true", False, 'm'),
-        "tmp-scratch": ("Use $VSC_SCRATCH as temporary disk instead of /dev/shm", None, "store_true", False, 'M'),
+        "tmp-scratch": (
+            "Use VSC_SCRATCH_VO_USER as temporary disk instead of /dev/shm", None, "store_true", False, 'M'),
         "version": ("Show the version", None, "store_true", False, 'v'),
     }
     opts = SimpleOption(options)
@@ -251,7 +252,7 @@ def main():
         if opts.options.tmp:
             job_options['tmp'] = '/tmp'
         elif opts.options.tmp_scratch:
-            job_options['tmp'] = os.path.join('$VSC_SCRATCH', job_options['target_arch'])
+            job_options['tmp'] = os.path.join('$VSC_SCRATCH_VO_USER', job_options['target_arch'])
         ebconf['buildpath'] = os.path.join(job_options['tmp'], 'eb-submit-build')
 
         # common EB command line options
