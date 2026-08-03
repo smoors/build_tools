@@ -109,6 +109,10 @@ if [[ "0" == "1" && -n "${builds_succeeded}" ]];then
         --dependency=singleton
         --partition=ampere_gpu
     )
+    if [[ "ampere_gpu" == "zen4_h200" ]]; then
+        # sofia zen4_h200 requires at least 1 GPU
+        job_options+=(--gpus-per-node=1)
+    fi
     cmd=(
         /usr/libexec/lmod/run_lmod_cache.py
         --create-cache
