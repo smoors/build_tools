@@ -35,3 +35,20 @@ def test_submit_lmod_cache_job(inputdir):
         ref_job_contents = rj.read().rstrip()
 
     assert new_job_contents == ref_job_contents
+
+
+def test_submit_lmod_cache_job_gpu_required(inputdir):
+    # sofia zen4_h200 requires at least 1 GPU, otherwise the job gets blocked
+    job_script = 'lmod_cache_job_02.sh'
+
+    _, out = submit_lmod_cache_job('zen4_h200', dry_run=True)
+
+    new_job = out.split(' ')[-1]
+    with open(new_job) as nj:
+        new_job_contents = nj.read().rstrip()
+
+    ref_job = os.path.join(inputdir, job_script)
+    with open(ref_job) as rj:
+        ref_job_contents = rj.read().rstrip()
+
+    assert new_job_contents == ref_job_contents

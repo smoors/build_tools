@@ -31,7 +31,7 @@ LMOD_CACHE_JOB_TEMPLATE = """#!/bin/bash
 #SBATCH --job-name=lmod_cache_{archdir}
 #SBATCH --dependency=singleton{jobids_depend}
 #SBATCH --partition={partition}
-{cache_cmd}
+{gpus}{cache_cmd}
 """
 
 
@@ -61,9 +61,13 @@ def submit_lmod_cache_job(partition, jobids_depend=None, cluster=None, **kwargs)
     if PARTITIONS[partition][ARCH] == 'zen5-ib' and PARTITIONS[partition][CLUSTER] != SOFIA:
         cache_cmd.append('--create-spider-cache')
 
+    # sofia zen4_h200 requires at least 1 GPU per job
+    gpus_sbatch = '#SBATCH --gpus-per-node=1\n' if cluster == SOFIA and partition == 'zen4_h200' else ''
+
     cache_job = LMOD_CACHE_JOB_TEMPLATE.format(
         jobids_depend=f',afterok:{":".join(jobids_depend)}' if jobids_depend else '',
         partition=partition,
+        gpus=gpus_sbatch,
         cache_cmd=' '.join(cache_cmd),
         archdir=archdir,
     )
