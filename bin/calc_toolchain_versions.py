@@ -31,6 +31,9 @@ def calc_tc_versions(valid_toolchains):
     os.environ['EASYBUILD_IGNORE_INDEX'] = '1'
     os.environ['EASYBUILD_TERSE'] = '1'
 
+    # avoid infinite loop: this script is called by the hooks
+    del os.environ['EASYBUILD_HOOKS']
+
     set_up_configuration()
 
     tc_versions = {}
